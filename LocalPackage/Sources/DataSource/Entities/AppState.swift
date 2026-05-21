@@ -18,18 +18,29 @@
  limitations under the License.
  */
 
+import SystemInfoKit
+
 public struct AppState: Sendable {
     public var name: String
     public var version: String
     public var hasAlreadyBootstrap: Bool
+    public let monitorInterval: Int
+    public let systemInfoObserver = SystemInfoObserver.shared
+    public var cpuRingBuffer = RingBuffer()
+    public var memoryRingBuffer = RingBuffer()
+    public let metricsStreamBundle = AsyncStreamBundle<Metrics>()
+    public let runnerBundleStreamBundle = AsyncStreamBundle<RunnerBundle>()
+    public let runnerSpeedStreamBundle = AsyncStreamBundle<Float>()
 
     init(
         name: String = "",
         version: String = "",
-        hasAlreadyBootstrap: Bool = false
+        hasAlreadyBootstrap: Bool = false,
+        monitorInterval: Int = 5
     ) {
         self.name = name
         self.version = version
         self.hasAlreadyBootstrap = hasAlreadyBootstrap
+        self.monitorInterval = monitorInterval
     }
 }

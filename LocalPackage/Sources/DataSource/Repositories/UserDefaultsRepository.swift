@@ -23,26 +23,51 @@ import Foundation
 public struct UserDefaultsRepository: Sendable {
     private var userDefaultsClient: UserDefaultsClient
 
-    public var isEnabled: Bool {
+    public var runnerID: String {
+        get { userDefaultsClient.string(.runnerID) ?? RunnerKind.cat.id }
+        nonmutating set { userDefaultsClient.set(newValue, .runnerID) }
+    }
+
+    public var useInverseSpeedScaling: Bool {
+        get { userDefaultsClient.bool(.useInverseSpeedScaling) }
+        nonmutating set { userDefaultsClient.set(newValue, .useInverseSpeedScaling) }
+    }
+
+    public var isFlippedHorizontally: Bool {
+        get { userDefaultsClient.bool(.isFlippedHorizontally) }
+        nonmutating set { userDefaultsClient.set(newValue, .isFlippedHorizontally) }
+    }
+
+    public var activationBundle: ActivationBundle {
         get {
-            userDefaultsClient.bool("isEnabled")
+            guard let data = userDefaultsClient.data(.activationBundle),
+                  let value = try? JSONDecoder().decode(ActivationBundle.self, from: data) else {
+                return .default
+            }
+            return value
         }
         nonmutating set {
-            userDefaultsClient.setBool(newValue, "isEnabled")
+            if let data = try? JSONEncoder().encode(newValue) {
+                userDefaultsClient.set(data, .activationBundle)
+            } else {
+                userDefaultsClient.removeObject(.activationBundle)
+            }
         }
     }
 
     public init(_ userDefaultsClient: UserDefaultsClient) {
         self.userDefaultsClient = userDefaultsClient
-
-#if DEBUG
         if ProcessInfo.needsResetUserDefaults {
             userDefaultsClient.removePersistentDomain(Bundle.main.bundleIdentifier!)
         }
+        userDefaultsClient.register([
+            .runnerID: RunnerKind.cat.id,
+            .useInverseSpeedScaling: false,
+            .isFlippedHorizontally: false,
+        ])
         if ProcessInfo.needsShowAllData {
             showAllData()
         }
-#endif
     }
 
     private func showAllData() {

@@ -27,6 +27,6 @@ struct RunCatNeoApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
-        ContentScene()
+        RunnerMenuBarScene()
     }
 }

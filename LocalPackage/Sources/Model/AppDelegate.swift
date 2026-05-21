@@ -25,15 +25,45 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     private let appDependencies = AppDependencies.shared
 
     public func applicationDidFinishLaunching(_ notification: Notification) {
-        appDependencies.appStateClient.withLock {
+        let appStateClient = appDependencies.appStateClient
+        appStateClient.withLock {
             $0.name = Bundle.main.bundleName
             $0.version = Bundle.main.bundleVersion
         }
-
+        let nsWorkspaceClient = appDependencies.nsWorkspaceClient
         let logService = LogService(appDependencies)
         logService.bootstrap()
+        let systemInfoService = SystemInfoService(appDependencies)
+        let runnerService = RunnerService(appDependencies)
+        Task {
+            await withTaskGroup { group in
+                group.addTask {
+                    let publisher = nsWorkspaceClient.publisher(NSWorkspace.willSleepNotification)
+                    for await _ in publisher.values {
+                        systemInfoService.stopMonitoring()
+                    }
+                }
+                group.addTask {
+                    let publisher = nsWorkspaceClient.publisher(NSWorkspace.didWakeNotification)
+                    for await _ in publisher.values {
+                        systemInfoService.startMonitoring()
+                    }
+                }
+                group.addTask {
+                    let stream = appStateClient.withLock(\.systemInfoObserver).systemInfoStream()
+                    for await value in stream {
+                        systemInfoService.updateMetrics(from: value)
+                        runnerService.updateRunnerSpeed(from: value.cpuInfo)
+                    }
+                }
+            }
+        }
         logService.notice(.launchApp)
+        systemInfoService.startMonitoring()
+        runnerService.setup()
     }
 
-    public func applicationWillTerminate(_ notification: Notification) {}
+    public func applicationWillTerminate(_ notification: Notification) {
+        SystemInfoService(appDependencies).stopMonitoring()
+    }
 }

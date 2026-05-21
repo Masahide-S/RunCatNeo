@@ -19,6 +19,7 @@
  */
 
 import Foundation
+import UniformTypeIdentifiers
 
 public struct ApplicationSupportRepository: Sendable {
     private var dataClient: DataClient
@@ -50,5 +51,58 @@ public struct ApplicationSupportRepository: Sendable {
         } catch {
             fatalError(error.localizedDescription)
         }
+    }
+
+    public func loadCustomRunners() -> [Runner]? {
+        let fileURL = appDirectoryURL
+            .appending(path: String.customRunners)
+            .appendingPathExtension(for: .json)
+        guard fileManagerClient.fileExists(fileURL.path(percentEncoded: false)),
+              let data = try? dataClient.read(fileURL),
+              let runners = try? JSONDecoder().decode([Runner].self, from: data) else {
+            return nil
+        }
+        let customRunners = runners.filter { $0.isCustom && $0.name != nil }
+        return customRunners.isEmpty ? nil : customRunners
+    }
+
+    public func saveCustomRunners(_ runners: [Runner]) throws {
+        let fileURL = appDirectoryURL
+            .appending(path: String.customRunners)
+            .appendingPathExtension(for: .json)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        let data = try encoder.encode(runners)
+        try dataClient.write(data, fileURL)
+    }
+
+    public func loadData(directory: String, fileName: String, fileType: UTType) -> Data? {
+        let fileURL = appDirectoryURL
+            .appending(path: directory)
+            .appending(path: fileName)
+            .appendingPathExtension(for: fileType)
+        guard fileManagerClient.fileExists(fileURL.path(percentEncoded: false)) else {
+            return nil
+        }
+        return try? dataClient.read(fileURL)
+    }
+
+    public func saveData(directory: String, fileName: String, fileType: UTType, data: Data) throws {
+        let containerURL = appDirectoryURL.appending(path: directory)
+        if !fileManagerClient.fileExists(containerURL.path(percentEncoded: false)) {
+            try fileManagerClient.createDirectory(containerURL, true)
+        }
+        let fileURL = containerURL
+            .appending(path: fileName)
+            .appendingPathExtension(for: fileType)
+        try dataClient.write(data, fileURL)
+    }
+
+    public func delete(directory: String) {
+        let containerURL = appDirectoryURL.appending(path: directory)
+        guard fileManagerClient.fileExists(containerURL.path(percentEncoded: false)) else {
+            return
+        }
+        try? fileManagerClient.removeItem(containerURL)
     }
 }
