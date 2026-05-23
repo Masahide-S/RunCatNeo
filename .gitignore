@@ -7,7 +7,6 @@ xcuserdata/
 *.xccheckout
 
 # Swift Package Manager
-LocalPackage/Package.resolved
 .swiftpm/
 .build/
 
