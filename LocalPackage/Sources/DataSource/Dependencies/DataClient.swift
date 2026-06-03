@@ -24,7 +24,7 @@ import UniformTypeIdentifiers
 public struct DataClient: DependencyClient {
     public var read: @Sendable (URL) throws -> Data
     public var write: @Sendable (Data, URL) throws -> Void
-    public var convert: @Sendable (CGImage, UTType) -> Data?
+    public var convert: @Sendable (CGImage, UTType) throws -> Data
 
     public static let liveValue = Self(
         read: { try Data(contentsOf: $0) },
@@ -32,11 +32,11 @@ public struct DataClient: DependencyClient {
         convert: {
             let data = NSMutableData()
             guard let destination = CGImageDestinationCreateWithData(data, $1.identifier as CFString, 1, nil) else {
-                return nil
+                throw CGError.failure.nsError
             }
             CGImageDestinationAddImage(destination, $0, nil)
             guard CGImageDestinationFinalize(destination) else {
-                return nil
+                throw CGError.failure.nsError
             }
             return data as Data
         }
@@ -45,6 +45,6 @@ public struct DataClient: DependencyClient {
     public static let testValue = Self(
         read: { _ in Data() },
         write: { _, _ in },
-        convert: { _, _ in nil }
+        convert: { _, _ in Data() }
     )
 }

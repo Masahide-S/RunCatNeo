@@ -1,8 +1,8 @@
 /*
- RunnerBundle.swift
- DataSource
+ AdjustAlignmentViewModifier.swift
+ UserInterface
 
- Created by Takuto Nakamura on 2026/05/09.
+ Created by Takuto Nakamura on 2026/06/03.
  Copyright 2026 Koyme22 (Takuto Nakamura)
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,17 +18,21 @@
  limitations under the License.
  */
 
-public struct RunnerBundle: Sendable, Equatable {
-    public var runner: Runner
-    public var displayFormat: DisplayFormat
+import SwiftUI
 
-    public init(runner: Runner, frames: [Frame]) {
-        self.runner = runner
-        self.displayFormat = .keyFrameAnimation(frames)
+private struct AdjustAlignmentViewModifier: ViewModifier {
+    var alignment: Alignment
+
+    func body(content: Content) -> some View {
+        ZStack(alignment: alignment) {
+            Text("dummy", bundle: .module).hidden()
+            content
+        }
     }
+}
 
-    public init(runner: Runner, frame: Frame) {
-        self.runner = runner
-        self.displayFormat = .thumbnail(frame)
+extension View {
+    func adjustAlignment(_ alignment: Alignment) -> some View {
+        modifier(AdjustAlignmentViewModifier(alignment: alignment))
     }
 }

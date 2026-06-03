@@ -1,8 +1,8 @@
 /*
- RunnerBundle.swift
+ RCNError.swift
  DataSource
 
- Created by Takuto Nakamura on 2026/05/09.
+ Created by Takuto Nakamura on 2026/05/31.
  Copyright 2026 Koyme22 (Takuto Nakamura)
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,17 +18,17 @@
  limitations under the License.
  */
 
-public struct RunnerBundle: Sendable, Equatable {
-    public var runner: Runner
-    public var displayFormat: DisplayFormat
+import Foundation
 
-    public init(runner: Runner, frames: [Frame]) {
-        self.runner = runner
-        self.displayFormat = .keyFrameAnimation(frames)
-    }
+public enum RCNError: Error, Equatable {
+    case customRunner(CustomRunner)
 
-    public init(runner: Runner, frame: Frame) {
-        self.runner = runner
-        self.displayFormat = .thumbnail(frame)
+    public enum CustomRunner: Error {
+        case runnerInUse
+        case nameAlreadyExists
+        case invalidFrameImage
+        case frameLimitExceeded
+        case savingFailed
+        case loadingFailed
     }
 }

@@ -31,13 +31,11 @@ public final class MetricsSettings: Composable {
 
     @ObservationIgnored private var task: Task<Void, Never>?
 
-    public var showsMetricsBar: Bool
     public var metricsConfiguration: MetricsConfiguration
     public let action: (Action) async -> Void
 
     public init(
         _ appDependencies: AppDependencies,
-        showsMetricsBar: Bool? = nil,
         metricsConfiguration: MetricsConfiguration? = nil,
         action: @escaping (Action) async -> Void =  { _ in }
     ) {
@@ -45,7 +43,6 @@ public final class MetricsSettings: Composable {
         self.userDefaultsRepository = .init(appDependencies.userDefaultsClient)
         self.logService = .init(appDependencies)
         self.metricsService = .init(appDependencies)
-        self.showsMetricsBar = showsMetricsBar ?? userDefaultsRepository.showsMetricsBar
         self.metricsConfiguration = metricsConfiguration ?? userDefaultsRepository.metricsConfiguration
         self.action = action
     }
@@ -62,9 +59,9 @@ public final class MetricsSettings: Composable {
                 }
             }
 
-        case let .showsMetricsBarToggleSwitched(isOn):
-            showsMetricsBar = isOn
-            userDefaultsRepository.showsMetricsBar = isOn
+        case .onDisappear:
+            task?.cancel()
+            task = nil
 
         case let .monitorsSystemInfoToggleSwitched(type, isOn):
             func overwrite(isOn: Bool, shows: inout Bool) {
@@ -100,7 +97,7 @@ public final class MetricsSettings: Composable {
 
     public enum Action: Sendable {
         case task(String)
-        case showsMetricsBarToggleSwitched(Bool)
+        case onDisappear
         case monitorsSystemInfoToggleSwitched(SystemInfoType, Bool)
     }
 }

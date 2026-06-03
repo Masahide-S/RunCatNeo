@@ -30,7 +30,7 @@ public struct AppState: Sendable {
     public var memoryRingBuffer = RingBuffer()
     public var metrics = AsyncStreamBundle<Metrics>()
     public var metricsConfigurationChanges = AsyncStreamBundle<Void>()
-    public var runnerBundle: RunnerBundle?
+    public var runnerBundleLists = AsyncStreamBundle<[RunnerBundle]>()
     public var runnerBundles = AsyncStreamBundle<RunnerBundle>()
     public var runnerSpeeds = AsyncStreamBundle<Float>()
 

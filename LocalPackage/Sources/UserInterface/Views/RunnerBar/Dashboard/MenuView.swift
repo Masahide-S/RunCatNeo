@@ -110,7 +110,7 @@ struct MenuView: View {
                     Label {
                         Text("debugSleep", bundle: .module)
                     } icon: {
-                        Image(systemName: "powersleep")
+                        Image(systemName: "sleep")
                     }
                 }
                 Button {
@@ -129,15 +129,11 @@ struct MenuView: View {
             Label {
                 Text("menu", bundle: .module)
             } icon: {
-                Image(systemName: "line.3.horizontal.circle")
+                Image(systemName: "list.bullet")
             }
             .labelStyle(.iconOnly)
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
     }
-}
-
-#Preview {
-    MenuView(appName: "RunCat Neo", buttonTapped: { _ in })
 }

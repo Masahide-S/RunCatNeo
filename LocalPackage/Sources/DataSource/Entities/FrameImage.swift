@@ -1,8 +1,8 @@
 /*
- RunnerBundle.swift
+ FrameImage.swift
  DataSource
 
- Created by Takuto Nakamura on 2026/05/09.
+ Created by Takuto Nakamura on 2026/06/02.
  Copyright 2026 Koyme22 (Takuto Nakamura)
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,17 +18,15 @@
  limitations under the License.
  */
 
-public struct RunnerBundle: Sendable, Equatable {
-    public var runner: Runner
-    public var displayFormat: DisplayFormat
+import Foundation
+import CoreGraphics
 
-    public init(runner: Runner, frames: [Frame]) {
-        self.runner = runner
-        self.displayFormat = .keyFrameAnimation(frames)
-    }
+public struct FrameImage: Sendable, Hashable, Identifiable {
+    public var id: UUID
+    public var cgImage: CGImage
 
-    public init(runner: Runner, frame: Frame) {
-        self.runner = runner
-        self.displayFormat = .thumbnail(frame)
+    public init(id: UUID, cgImage: CGImage) {
+        self.id = id
+        self.cgImage = cgImage
     }
 }

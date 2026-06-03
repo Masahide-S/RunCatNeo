@@ -69,6 +69,13 @@ struct RunnerBarView: View {
                 )
             ))
         }
+        // This will not be called within the MenuBarExtra lifecycle,
+        // but I am including it here for the sake of formality.
+        .onDisappear {
+            Task {
+                await store.send(.onDisappear)
+            }
+        }
     }
 }
 

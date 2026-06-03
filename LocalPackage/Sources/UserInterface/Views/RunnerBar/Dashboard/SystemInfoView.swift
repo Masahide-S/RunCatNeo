@@ -23,7 +23,7 @@ import SystemInfoKit
 
 struct SystemInfoView<Accessory: View>: View {
     var systemInfo: any SystemInfo
-    var isVisibleDetails = false
+    var isVisibleDetails = true
     @ViewBuilder var accessory: () -> Accessory
 
     var body: some View {

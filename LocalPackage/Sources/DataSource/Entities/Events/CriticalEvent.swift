@@ -18,22 +18,41 @@
  limitations under the License.
  */
 
-import Foundation
 import Logging
 
 public enum CriticalEvent {
-    case failedToDoSomething(any Error)
+    case setupFailed(any Error)
+    case importingFrameImagesFailed(any Error)
+    case loadingCustomRunnerFailed(any Error)
+    case savingCustomRunnerFailed(any Error)
+    case deletingCustomRunnerFailed(any Error)
+    case unknown(any Error)
 
     public var message: Logger.Message {
         switch self {
-        case .failedToDoSomething:
-            "Failed to do something."
+        case .setupFailed:
+            "Failed to setup."
+        case .importingFrameImagesFailed:
+            "Failed importing frame images."
+        case .loadingCustomRunnerFailed:
+            "Failed loading custom runner."
+        case .savingCustomRunnerFailed:
+            "Failed saving custom runner."
+        case .deletingCustomRunnerFailed:
+            "Failed deleting custom runner."
+        case .unknown:
+            "An unknown error has occurred."
         }
     }
 
     public var metadata: Logger.Metadata? {
         switch self {
-        case let .failedToDoSomething(error):
+        case let .setupFailed(error),
+            let .importingFrameImagesFailed(error),
+            let .loadingCustomRunnerFailed(error),
+            let .savingCustomRunnerFailed(error),
+            let .deletingCustomRunnerFailed(error),
+            let .unknown(error):
             ["cause": "\(error.localizedDescription)"]
         }
     }

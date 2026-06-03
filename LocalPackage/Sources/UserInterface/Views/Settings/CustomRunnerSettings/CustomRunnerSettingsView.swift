@@ -1,8 +1,8 @@
 /*
- DashboardView.swift
+ CustomRunnerSettingsView.swift
  UserInterface
 
- Created by Takuto Nakamura on 2026/05/08.
+ Created by Takuto Nakamura on 2026/05/31.
  Copyright 2026 Koyme22 (Takuto Nakamura)
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,29 +21,23 @@
 import Model
 import SwiftUI
 
-struct DashboardView: View {
-    @Environment(\.appDependencies) private var appDependencies
-    @StateObject var store: Dashboard
+struct CustomRunnerSettingsView: View {
+    @StateObject var store: CustomRunnerSettings
 
     var body: some View {
-        VStack(spacing: 8) {
-            HStack {
-                Text(store.appName)
-                    .padding(.leading, 8)
-                Spacer()
-                MenuView(appName: store.appName) { action in
-                    await store.send(action)
-                }
-            }
-            SystemInfoStackView(
-                systemInfoBundle: store.systemInfoBundle,
-                cpuRingBuffer: store.cpuRingBuffer,
-                memoryRingBuffer: store.memoryRingBuffer,
-                isPreview: store.isPreview
-            )
+        HStack(alignment: .top, spacing: 16) {
+            CustomRunnerListView(store: store)
+            Divider()
+            CustomRunnerEditorView(store: store)
         }
         .fixedSize()
-        .padding(8)
+        .padding()
+        .alert(
+            isPresented: $store.showingAlert,
+            error: store.error,
+            actions: { _ in },
+            message: { _ in }
+        )
         .task {
             await store.send(.task(String(describing: Self.self)))
         }
@@ -55,4 +49,4 @@ struct DashboardView: View {
     }
 }
 
-extension Dashboard: ObservableObject {}
+extension CustomRunnerSettings: ObservableObject {}

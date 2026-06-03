@@ -23,7 +23,7 @@ import Foundation
 public struct UserDefaultsRepository: Sendable {
     private var userDefaultsClient: UserDefaultsClient
 
-    public var runnerID: String {
+    public var runnerID: Runner.ID {
         get { userDefaultsClient.string(.runnerID) ?? RunnerKind.cat.id }
         nonmutating set { userDefaultsClient.set(newValue, .runnerID) }
     }

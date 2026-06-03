@@ -29,16 +29,6 @@ struct MetricsSettingsView: View {
         Form {
             Section {
                 Toggle(isOn: Binding<Bool>(
-                    get: { store.showsMetricsBar },
-                    asyncSet: { await store.send(.showsMetricsBarToggleSwitched($0)) }
-                )) {
-                    Text("showMetricsBar", bundle: .module)
-                }
-            } header: {
-                Text("metricsBar", bundle: .module)
-            }
-            Section {
-                Toggle(isOn: Binding<Bool>(
                     get: { store.metricsConfiguration.monitorsMemory },
                     asyncSet: { await store.send(.monitorsSystemInfoToggleSwitched(.memory, $0)) }
                 )) {
@@ -71,11 +61,12 @@ struct MetricsSettingsView: View {
         .task {
             await store.send(.task(String(describing: Self.self)))
         }
+        .onDisappear {
+            Task {
+                await store.send(.onDisappear)
+            }
+        }
     }
 }
 
 extension MetricsSettings: ObservableObject {}
-
-#Preview {
-    MetricsSettingsView(store: .init(.testDependencies()))
-}

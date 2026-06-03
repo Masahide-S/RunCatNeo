@@ -28,6 +28,21 @@ struct GeneralSettingsView: View {
     var body: some View {
         Form {
             Section {
+                Picker(selection: Binding<Runner?>(
+                    get: { store.currentRunner },
+                    asyncSet: { await store.send(.selectRunner($0)) }
+                )) {
+                    ForEach(store.runnerBundleList, id: \.runner) { runnerBundle in
+                        Label {
+                            Text(runnerBundle.runner.name)
+                        } icon: {
+                            runnerBundle.thumbnail
+                        }
+                        .tag(runnerBundle.runner)
+                    }
+                } label: {
+                    Text("runner", bundle: .module)
+                }
                 Toggle(isOn: Binding<Bool>(
                     get: { store.speedDecreasesUnderLoad },
                     asyncSet: { await store.send(.slowDownUnderLoadToggleSwitched($0)) }
@@ -41,7 +56,17 @@ struct GeneralSettingsView: View {
                     Text("flipHorizontally", bundle: .module)
                 }
             } header: {
-                Text("runner", bundle: .module)
+                Text("runnerBar", bundle: .module)
+            }
+            Section {
+                Toggle(isOn: Binding<Bool>(
+                    get: { store.showsMetricsBar },
+                    asyncSet: { await store.send(.showMetricsBarToggleSwitched($0)) }
+                )) {
+                    Text("showMetricsBar", bundle: .module)
+                }
+            } header: {
+                Text("metricsBar", bundle: .module)
             }
             Section {
                 Toggle(isOn: Binding<Bool>(
@@ -59,11 +84,12 @@ struct GeneralSettingsView: View {
         .task {
             await store.send(.task(String(describing: Self.self)))
         }
+        .onDisappear {
+            Task {
+                await store.send(.onDisappear)
+            }
+        }
     }
 }
 
 extension GeneralSettings: ObservableObject {}
-
-#Preview {
-    GeneralSettingsView(store: .init(.testDependencies()))
-}

@@ -70,6 +70,9 @@ let package = Package(
             dependencies: [
                 "Model",
             ],
+            resources: [
+                .process("Resources"),
+            ],
             swiftSettings: swiftSettings
         ),
     ]

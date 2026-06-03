@@ -35,7 +35,7 @@ extension NSImage {
         return nsImage
     }
 
-    func normalize() {
+    public func normalize() {
         let scale = size.height / 18.0
         size = CGSize(width: size.width / scale, height: size.height / scale)
     }
@@ -48,5 +48,35 @@ extension NSImage {
         let rep = NSCIImageRep(ciImage: output)
         representations.forEach { removeRepresentation($0) }
         addRepresentation(rep)
+    }
+
+    public func resize(width: CGFloat, alignment: HorizontalAlignment = .center) {
+        guard let ciImage, size.height > 0, width > 0 else { return }
+        let pixelHeight = ciImage.extent.height
+        let scale = pixelHeight / size.height
+        let sourcePixelWidth = ciImage.extent.width
+        let targetPixelWidth = width * scale
+        let delta = targetPixelWidth - sourcePixelWidth
+        let pixelOffsetX: CGFloat = switch alignment {
+        case .leading: 0
+        case .center: delta / 2
+        case .trailing: delta
+        }
+        let translated = ciImage.transformed(
+            by: CGAffineTransform(translationX: pixelOffsetX, y: 0)
+        )
+        let canvasRect = CGRect(x: 0, y: 0, width: targetPixelWidth, height: pixelHeight)
+        let canvas = CIImage(color: CIColor.clear).cropped(to: canvasRect)
+        let output = translated.composited(over: canvas).cropped(to: canvasRect)
+        let rep = NSCIImageRep(ciImage: output)
+        representations.forEach { removeRepresentation($0) }
+        addRepresentation(rep)
+        size = CGSize(width: width, height: size.height)
+    }
+
+    public enum HorizontalAlignment {
+        case leading
+        case center
+        case trailing
     }
 }

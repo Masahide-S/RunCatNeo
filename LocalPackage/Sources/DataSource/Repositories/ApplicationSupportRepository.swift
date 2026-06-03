@@ -53,17 +53,20 @@ public struct ApplicationSupportRepository: Sendable {
         }
     }
 
-    public func loadCustomRunners() -> [Runner]? {
+    public func loadCustomRunners() -> [Runner] {
         let fileURL = appDirectoryURL
             .appending(path: String.customRunners)
             .appendingPathExtension(for: .json)
         guard fileManagerClient.fileExists(fileURL.path(percentEncoded: false)),
               let data = try? dataClient.read(fileURL),
               let runners = try? JSONDecoder().decode([Runner].self, from: data) else {
-            return nil
+            return []
         }
-        let customRunners = runners.filter { $0.isCustom && $0.name != nil }
-        return customRunners.isEmpty ? nil : customRunners
+        return runners.filter(\.isCustom)
+    }
+
+    public func loadCustomRunner(of runnerID: Runner.ID) -> Runner? {
+        loadCustomRunners().first { $0.id == runnerID }
     }
 
     public func saveCustomRunners(_ runners: [Runner]) throws {

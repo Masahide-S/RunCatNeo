@@ -20,7 +20,8 @@
 
 import Foundation
 
-public enum Frame: Sendable {
+public enum Frame: Sendable, Equatable {
     case preset(String)
     case custom(Data)
+    case broken
 }

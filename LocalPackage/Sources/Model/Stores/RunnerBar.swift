@@ -86,9 +86,8 @@ public final class RunnerBar: Composable {
             }
 
         case .onDisappear:
-            // This will not be called within the MenuBarExtra lifecycle,
-            // but I am including it here for the sake of formality.
             task?.cancel()
+            task = nil
         }
     }
 
@@ -100,12 +99,17 @@ public final class RunnerBar: Composable {
     }
 
     private func update(runnerBundle: RunnerBundle) {
-        let images = runnerBundle.frames.compactMap { frame in
+        guard case let .keyFrameAnimation(frames) = runnerBundle.displayFormat else {
+            return
+        }
+        let images = frames.compactMap { frame in
             switch frame {
             case let .preset(resourceName):
                 eventBridge?.getBundleImage(resourceName)
             case let .custom(data):
                 NSImage(data: data)
+            case .broken:
+                nil
             }
         }
         icon = images.first?.plane
@@ -115,7 +119,7 @@ public final class RunnerBar: Composable {
         let isFlippedHorizontally = userDefaultsRepository.isFlippedHorizontally
         isTemplate = runnerBundle.runner.isTemplate
         eventBridge?.setColor(tintColor, isTemplate)
-        let frames = images.map { image in
+        let imageFrames = images.map { image in
             if isFlippedHorizontally {
                 image.flip()
             }
@@ -123,7 +127,7 @@ public final class RunnerBar: Composable {
             image.isTemplate = isTemplate
             return image
         }
-        eventBridge?.setFrames(frames, isTemplate)
+        eventBridge?.setFrames(imageFrames, isTemplate)
     }
 
     private func update(runnerSpeed: Float) {

@@ -27,7 +27,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     public func applicationDidFinishLaunching(_ notification: Notification) {
         let appStateClient = appDependencies.appStateClient
         appStateClient.withLock {
-            $0.name = Bundle.main.bundleName
+            $0.name = Bundle.main.bundleDisplayName
             $0.version = Bundle.main.bundleVersion
         }
         let nsWorkspaceClient = appDependencies.nsWorkspaceClient
@@ -60,7 +60,11 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         logService.notice(.launchApp)
         metricsService.startMonitoring()
-        runnerService.setup()
+        do {
+            try runnerService.setup()
+        } catch {
+            logService.critical(.setupFailed(error))
+        }
     }
 
     public func applicationWillTerminate(_ notification: Notification) {

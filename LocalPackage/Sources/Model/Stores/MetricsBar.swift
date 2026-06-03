@@ -75,6 +75,7 @@ public final class MetricsBar: Composable {
 
         case .onDisappear:
             task?.cancel()
+            task = nil
         }
     }
 

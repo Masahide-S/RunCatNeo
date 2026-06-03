@@ -78,6 +78,7 @@ public final class Dashboard: Composable {
 
         case .onDisappear:
             task?.cancel()
+            task = nil
 
         case .settingsButtonTapped:
             nsAppClient.activate(true)

@@ -22,7 +22,7 @@ import Foundation
 
 public struct Runner: Sendable, Hashable, Identifiable, Codable {
     public var id: String
-    public var name: String?
+    public var name: String
     public var isCustom: Bool
     public var isTemplate: Bool
     public var frameOrder: FrameOrder
@@ -37,6 +37,7 @@ public struct Runner: Sendable, Hashable, Identifiable, Codable {
 
     public init(kind: RunnerKind) {
         id = kind.id
+        name = kind.localizedName
         isCustom = false
         isTemplate = true
         frameOrder = kind.frameOrder

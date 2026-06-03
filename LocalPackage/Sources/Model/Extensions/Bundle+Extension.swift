@@ -28,6 +28,6 @@ extension Bundle {
         return string
     }
 
-    var bundleName: String { bundleString(key: "CFBundleName") }
+    var bundleDisplayName: String { bundleString(key: "CFBundleDisplayName") }
     var bundleVersion: String { bundleString(key: "CFBundleVersion") }
 }

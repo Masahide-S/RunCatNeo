@@ -19,60 +19,71 @@
  */
 
 import DataSource
+import Foundation
 import SystemInfoKit
 
 struct RunnerService {
     private let appStateClient: AppStateClient
+    private let dataClient: DataClient
     private let applicationSupportRepository: ApplicationSupportRepository
     private let userDefaultsRepository: UserDefaultsRepository
 
     init(_ appDependencies: AppDependencies) {
         appStateClient = appDependencies.appStateClient
+        dataClient = appDependencies.dataClient
         applicationSupportRepository = .init(appDependencies.dataClient, appDependencies.fileManagerClient)
         userDefaultsRepository = .init(appDependencies.userDefaultsClient)
     }
 
-    private func prepareRunnerBundle(of runner: Runner) -> RunnerBundle? {
-        let names = runner.resourceNames()
-        let frames = names.compactMap { name -> Frame? in
-            if runner.isCustom {
-                if let data = applicationSupportRepository.loadData(directory: runner.id, fileName: name, fileType: .png) {
-                    Frame.custom(data)
-                } else {
-                    nil
-                }
+    private func prepareFrame(of runner: Runner, with name: String) throws -> Frame {
+        if runner.isCustom {
+            if let data = applicationSupportRepository.loadData(directory: runner.id, fileName: name, fileType: .png) {
+                Frame.custom(data)
             } else {
-                Frame.preset(name)
+                throw RCNError.customRunner(.loadingFailed)
             }
+        } else {
+            Frame.preset(name)
         }
-        guard names.count == frames.count else {
-            return nil
-        }
-        return RunnerBundle(runner: runner, frames: frames)
     }
 
-    func update(runner: Runner) {
-        guard let runnerBundle = prepareRunnerBundle(of: runner) else {
-            fatalError("Failed to prepare RunnerBundle.")
+    func update(runner: Runner) throws {
+        let frames = try runner.resourceNames().map {
+            try prepareFrame(of: runner, with: $0)
         }
+        let runnerBundle = RunnerBundle(runner: runner, frames: frames)
         userDefaultsRepository.runnerID = runner.id
         appStateClient.withLock {
-            $0.runnerBundle = runnerBundle
             $0.runnerBundles.send(runnerBundle)
         }
     }
 
-    func setup() {
+    func loadRunnerBundleList() {
+        var runners = RunnerKind.allCases.map(Runner.init(kind:))
+        runners.append(contentsOf: applicationSupportRepository.loadCustomRunners())
+        let runnerBundles = runners.map { runner in
+            guard let name = runner.resourceNames().first,
+                  let frame = try? prepareFrame(of: runner, with: name) else {
+                return RunnerBundle(runner: runner, frame: .broken)
+            }
+            return RunnerBundle(runner: runner, frame: frame)
+        }
+        appStateClient.withLock {
+            $0.runnerBundleLists.send(runnerBundles)
+        }
+    }
+
+    func setup() throws {
         let runnerID = userDefaultsRepository.runnerID
         let runner = if let kind = RunnerKind(rawValue: runnerID) {
             Runner(kind: kind)
-        } else if let runners = applicationSupportRepository.loadCustomRunners(),
-                  let runner = runners.first(where: { $0.id == runnerID }) {
+        } else if let runner = applicationSupportRepository.loadCustomRunner(of: runnerID) {
             runner
         } else {
             Runner.default
         }
-        update(runner: runner)
+        try update(runner: runner)
+        loadRunnerBundleList()
     }
 
     func updateRunnerSpeed(from cpuInfo: CPUInfo?) {
@@ -89,9 +100,44 @@ struct RunnerService {
 
     func resendCurrentRunnerBundle() {
         appStateClient.withLock {
-            if let runnerBundle = $0.runnerBundle {
+            if let runnerBundle = $0.runnerBundles.latestValue {
                 $0.runnerBundles.send(runnerBundle)
             }
         }
+    }
+
+    func validate(customRunnerName name: String) -> Bool {
+        let runners = applicationSupportRepository.loadCustomRunners()
+        return !runners.contains(where: { $0.name == name })
+    }
+
+    func convertToCustomFrame(from frameImage: FrameImage) throws -> Frame {
+        let data = try dataClient.convert(frameImage.cgImage, .png)
+        return Frame.custom(data)
+    }
+
+    func save(customRunner runner: Runner, with frameImages: [FrameImage]) throws {
+        let imageDataList: [Data] = try frameImages.map {
+            try dataClient.convert($0.cgImage, .png)
+        }
+        try imageDataList.enumerated().forEach { index, imageData in
+            try applicationSupportRepository.saveData(
+                directory: runner.id,
+                fileName: "frame-\(index)",
+                fileType: .png,
+                data: imageData
+            )
+        }
+        let runners = applicationSupportRepository.loadCustomRunners()
+        try applicationSupportRepository.saveCustomRunners(runners + [runner])
+        loadRunnerBundleList()
+    }
+
+    func delete(customRunner runner: Runner) throws {
+        var runners = applicationSupportRepository.loadCustomRunners()
+        runners.removeAll { $0 == runner }
+        try applicationSupportRepository.saveCustomRunners(runners)
+        applicationSupportRepository.delete(directory: runner.id)
+        loadRunnerBundleList()
     }
 }

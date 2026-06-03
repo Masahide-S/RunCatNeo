@@ -1,8 +1,8 @@
 /*
- RunnerBundle.swift
+ DisplayFormat.swift
  DataSource
 
- Created by Takuto Nakamura on 2026/05/09.
+ Created by Takuto Nakamura on 2026/05/31.
  Copyright 2026 Koyme22 (Takuto Nakamura)
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,17 +18,7 @@
  limitations under the License.
  */
 
-public struct RunnerBundle: Sendable, Equatable {
-    public var runner: Runner
-    public var displayFormat: DisplayFormat
-
-    public init(runner: Runner, frames: [Frame]) {
-        self.runner = runner
-        self.displayFormat = .keyFrameAnimation(frames)
-    }
-
-    public init(runner: Runner, frame: Frame) {
-        self.runner = runner
-        self.displayFormat = .thumbnail(frame)
-    }
+public enum DisplayFormat: Sendable, Equatable {
+    case keyFrameAnimation([Frame])
+    case thumbnail(Frame)
 }

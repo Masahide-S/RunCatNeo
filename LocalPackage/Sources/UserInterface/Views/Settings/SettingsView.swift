@@ -37,6 +37,15 @@ struct SettingsView: View {
                     }
                 }
                 .tag(SettingsTab.general)
+            CustomRunnerSettingsView(store: .init(appDependencies))
+                .tabItem {
+                    Label {
+                        Text("customRunnersTab", bundle: .module)
+                    } icon: {
+                        Image(.runcatBadgePlus)
+                    }
+                }
+                .tag(SettingsTab.customRunners)
             MetricsSettingsView(store: .init(appDependencies))
                 .tabItem {
                     Label {
@@ -49,9 +58,4 @@ struct SettingsView: View {
         }
         .accessibilityIdentifier("settings")
     }
-}
-
-#Preview {
-    SettingsView()
-        .environment(\.appDependencies, .testDependencies())
 }
