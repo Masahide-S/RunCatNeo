@@ -1,7 +1,7 @@
 # Contributing to RunCat Neo
 
 Thank you for your interest in contributing to **RunCat Neo** 🐈  
-RunCat Neo is a Windows system monitoring application represented as a running cat animation.
+RunCat Neo is a macOS system monitoring application represented as a running cat animation.
 
 All kinds of contributions are welcome: bug reports, feature requests, and code contributions.
 
@@ -12,7 +12,7 @@ This document describes the rules, steps, and expectations for contributing to t
 ## Before Getting Started
 
 - **Only contributions in English are accepted.** Any contribution in another language may be closed.
-- **This project is Windows-only.** Issues or requests related to Linux, macOS, or other platforms will not be accepted.
+- **This project is macOS-only.** Issues or requests related to Windows, Linux, or other platforms will not be accepted.
 - Always use the provided **Issue** and **Pull Request** templates. Submissions that do not follow the templates may be closed.
 - Be respectful, constructive, and professional in all interactions.
 
@@ -147,12 +147,8 @@ To suggest a new feature:
 
 ## Code Style Guidelines
 
-- Follow existing project conventions.
-- Use meaningful and descriptive names.
-- Acronyms like `ID` and `URL` should be all lowercase or all uppercase (✅ `userID`, `fileURL`; ❌ `userId`, `fileUrl`).
-- In principle, avoid using abbreviated variable names (✅ `count`, `image`; ❌ `cnt`, `img`).
-- Avoid unnecessary complexity.
-- Prefer readable and self-explanatory code over clever solutions.
+All style rules are defined in [CODING_STYLE.md](CODING_STYLE.md).
+Follow them together with the existing conventions in the codebase.
 
 ---
 

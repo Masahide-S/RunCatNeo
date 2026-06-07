@@ -36,12 +36,4 @@ Global app state flows through `AppStateClient` (an `AllocatedUnfairLock<AppStat
 
 ## Code Conventions
 
-The project's `CONTRIBUTING.md` defines the authoritative style rules. Key points relevant when editing:
-
-- All code, identifiers, comments, and commit messages must be in English. User-facing strings go through the localization system.
-- Acronyms: all-lower or all-upper (`userID`, `fileURL` — never `userId`, `fileUrl`).
-- No abbreviated names like `cnt`, `img` — use `count`, `image`.
-- Default to no code comments; rely on descriptive names.
-- One PR per concern; do not bundle unrelated changes.
-
-Every source file under `LocalPackage/Sources/` carries the Apache-2.0 license header — preserve it when editing and include it when creating new files. Test files under `LocalPackage/Tests/` omit the header by convention and start directly with `import`.
+`CODING_STYLE.md` defines the authoritative style rules (language, naming, comments, formatting, license headers) — read and follow it when editing code. Contribution process rules (one PR per concern, PR/issue templates, review etiquette) live in `CONTRIBUTING.md`.

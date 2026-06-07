@@ -55,12 +55,10 @@ public struct Runner: Sendable, Hashable, Identifiable, Codable {
 
     public static let `default` = Runner(kind: .cat)
 
-    // MARK: Equatable
     public static func ==(lhs: Runner, rhs: Runner) -> Bool {
         lhs.id == rhs.id
     }
 
-    // MARK: Hashable
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
