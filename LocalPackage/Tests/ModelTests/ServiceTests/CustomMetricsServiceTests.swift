@@ -9,6 +9,7 @@ struct CustomMetricsServiceTests {
     private let snapshotJSON = """
         {
           "title": "Card",
+          "symbol": "staroflife",
           "metrics": [],
           "lastUpdatedDate": "2026-06-05T04:50:40Z"
         }
@@ -18,6 +19,7 @@ struct CustomMetricsServiceTests {
         get throws {
             CustomMetricsSnapshot(
                 title: "Card",
+                symbol: "staroflife",
                 lastUpdatedDate: try #require(ISO8601DateFormatter().date(from: "2026-06-05T04:50:40Z"))
             )
         }
@@ -27,6 +29,7 @@ struct CustomMetricsServiceTests {
         CustomMetricsSource(
             id: id,
             displayName: "Card",
+            symbol: "staroflife",
             fileURL: URL(filePath: "/tmp/card.json"),
             bookmark: Data("bookmark".utf8),
             createdAt: Date(timeIntervalSince1970: 0)
@@ -51,6 +54,7 @@ struct CustomMetricsServiceTests {
             CustomMetricsSource(
                 id: UUID(0),
                 displayName: "Card",
+                symbol: "staroflife",
                 fileURL: URL(filePath: "/tmp/card.json"),
                 bookmark: Data("bookmark".utf8),
                 createdAt: .distantPast
@@ -184,11 +188,6 @@ struct CustomMetricsServiceTests {
             dataClient: testDependency(of: DataClient.self) {
                 $0.read = { _ in Data(snapshotJSON.utf8) }
             },
-            fileWatcherClient: testDependency(of: FileWatcherClient.self) {
-                $0.watch = { _ in
-                    AsyncStream { $0.yield(Date(timeIntervalSince1970: 0)) }
-                }
-            },
             urlClient: testDependency(of: URLClient.self) {
                 $0.create = { _, _ in (false, URL(filePath: "/tmp/card.json")) }
                 $0.startAccessingSecurityScopedResource = { _ in true }
@@ -214,11 +213,6 @@ struct CustomMetricsServiceTests {
             appStateClient: .testDependency(appState),
             dataClient: testDependency(of: DataClient.self) {
                 $0.read = { _ in Data(snapshotJSON.utf8) }
-            },
-            fileWatcherClient: testDependency(of: FileWatcherClient.self) {
-                $0.watch = { _ in
-                    AsyncStream { $0.yield(Date(timeIntervalSince1970: 0)) }
-                }
             },
             urlClient: testDependency(of: URLClient.self) {
                 $0.create = { _, _ in (false, URL(filePath: "/tmp/card.json")) }
@@ -250,6 +244,43 @@ struct CustomMetricsServiceTests {
             dataClient: testDependency(of: DataClient.self) {
                 $0.read = { _ in throw URLError(.unknown) }
             },
+            urlClient: testDependency(of: URLClient.self) {
+                $0.create = { _, _ in (false, URL(filePath: "/tmp/card.json")) }
+                $0.startAccessingSecurityScopedResource = { _ in true }
+            },
+            userDefaultsClient: storage.client
+        ))
+        sut.startMonitoring()
+        try? await Task.sleep(for: .milliseconds(100))
+        #expect(appState.withLock(\.metrics.latestValue)?.customMetricsBundles.first?.isFailed == true)
+        sut.stopMonitoring()
+    }
+
+    @Test
+    func startMonitoring_reloads_snapshot_when_file_changes() async throws {
+        let appState = AllocatedUnfairLock<AppState>(initialState: .init())
+        let updatedJSON = """
+            {
+              "title": "Updated Card",
+              "symbol": "staroflife",
+              "metrics": [],
+              "lastUpdatedDate": "2026-06-05T04:50:40Z"
+            }
+            """
+        let readCount = AllocatedUnfairLock<Int>(initialState: 0)
+        let source = makeSource()
+        let storage = makeStorage(initialSources: [source])
+        let sut = CustomMetricsService(.testDependencies(
+            appStateClient: .testDependency(appState),
+            dataClient: testDependency(of: DataClient.self) {
+                $0.read = { _ in
+                    let isFirstRead = readCount.withLock { count in
+                        count += 1
+                        return count == 1
+                    }
+                    return Data((isFirstRead ? snapshotJSON : updatedJSON).utf8)
+                }
+            },
             fileWatcherClient: testDependency(of: FileWatcherClient.self) {
                 $0.watch = { _ in
                     AsyncStream { $0.yield(Date(timeIntervalSince1970: 0)) }
@@ -263,7 +294,48 @@ struct CustomMetricsServiceTests {
         ))
         sut.startMonitoring()
         try? await Task.sleep(for: .milliseconds(100))
-        #expect(appState.withLock(\.metrics.latestValue)?.customMetricsBundles.first?.isFailed == true)
+        #expect(appState.withLock(\.metrics.latestValue)?.customMetricsBundles == [
+            CustomMetricsBundle(
+                id: UUID(1),
+                snapshot: CustomMetricsSnapshot(
+                    title: "Updated Card",
+                    symbol: "staroflife",
+                    lastUpdatedDate: try #require(ISO8601DateFormatter().date(from: "2026-06-05T04:50:40Z"))
+                )
+            ),
+        ])
+        sut.stopMonitoring()
+    }
+
+    @Test
+    func startMonitoring_appends_failed_placeholder_bundle_when_source_has_never_loaded() async throws {
+        let appState = AllocatedUnfairLock<AppState>(initialState: .init())
+        let source = makeSource()
+        let storage = makeStorage(initialSources: [source])
+        let sut = CustomMetricsService(.testDependencies(
+            appStateClient: .testDependency(appState),
+            dataClient: testDependency(of: DataClient.self) {
+                $0.read = { _ in throw URLError(.unknown) }
+            },
+            urlClient: testDependency(of: URLClient.self) {
+                $0.create = { _, _ in (false, URL(filePath: "/tmp/card.json")) }
+                $0.startAccessingSecurityScopedResource = { _ in true }
+            },
+            userDefaultsClient: storage.client
+        ))
+        sut.startMonitoring()
+        try? await Task.sleep(for: .milliseconds(100))
+        #expect(appState.withLock(\.metrics.latestValue)?.customMetricsBundles == [
+            CustomMetricsBundle(
+                id: UUID(1),
+                snapshot: CustomMetricsSnapshot(
+                    title: "Card",
+                    symbol: "staroflife",
+                    lastUpdatedDate: Date(timeIntervalSince1970: 0)
+                ),
+                isFailed: true
+            ),
+        ])
         sut.stopMonitoring()
     }
 

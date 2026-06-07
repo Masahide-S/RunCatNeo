@@ -52,7 +52,6 @@ public struct FileWatcherClient: DependencyClient {
                 continuation.onTermination = { _ in
                     source.cancel()
                 }
-                continuation.yield(Date())
             }
         }
     )

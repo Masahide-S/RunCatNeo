@@ -82,7 +82,11 @@ struct RunnerService {
         } else {
             Runner.default
         }
-        try update(runner: runner)
+        do {
+            try update(runner: runner)
+        } catch {
+            try update(runner: .default)
+        }
         loadRunnerBundleList()
     }
 

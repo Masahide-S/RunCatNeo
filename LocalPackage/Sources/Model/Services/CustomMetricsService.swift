@@ -59,6 +59,7 @@ struct CustomMetricsService {
         let source = CustomMetricsSource(
             id: uuidClient.create(),
             displayName: snapshot.title,
+            symbol: snapshot.symbol,
             fileURL: url,
             bookmark: bookmark,
             createdAt: dateClient.now()
@@ -153,6 +154,16 @@ struct CustomMetricsService {
             var metrics = $0.metrics.latestValue ?? .init()
             if let index = metrics.customMetricsBundles.firstIndex(where: { $0.id == source.id }) {
                 metrics.customMetricsBundles[index].isFailed = true
+            } else {
+                metrics.customMetricsBundles.append(CustomMetricsBundle(
+                    id: source.id,
+                    snapshot: CustomMetricsSnapshot(
+                        title: source.displayName,
+                        symbol: source.symbol,
+                        lastUpdatedDate: source.createdAt
+                    ),
+                    isFailed: true
+                ))
             }
             $0.metrics.send(metrics)
         }
@@ -193,16 +204,11 @@ struct CustomMetricsService {
                     defer {
                         urlClient.stopAccessingSecurityScopedResource(url)
                     }
+                    loadSnapshot(from: url, for: source)
                     let watchStream = fileWatcherClient.watch(url)
                     for await _ in watchStream {
                         if Task.isCancelled { break }
-                        do {
-                            let data = try dataClient.read(url)
-                            let snapshot = try snapshotDecoder.decode(CustomMetricsSnapshot.self, from: data)
-                            emitSuccess(snapshot: snapshot, for: source)
-                        } catch {
-                            emitFailure(for: source)
-                        }
+                        loadSnapshot(from: url, for: source)
                     }
                     try? await Task.sleep(for: .milliseconds(200))
                 } catch is CancellationError {
@@ -212,6 +218,16 @@ struct CustomMetricsService {
                     try? await Task.sleep(for: .seconds(5))
                 }
             }
+        }
+    }
+
+    private func loadSnapshot(from url: URL, for source: CustomMetricsSource) {
+        do {
+            let data = try dataClient.read(url)
+            let snapshot = try snapshotDecoder.decode(CustomMetricsSnapshot.self, from: data)
+            emitSuccess(snapshot: snapshot, for: source)
+        } catch {
+            emitFailure(for: source)
         }
     }
 

@@ -190,6 +190,36 @@ struct RunnerServiceTests {
     }
 
     @Test
+    func setup_falls_back_to_default_runner_when_custom_frames_are_missing() throws {
+        let appState = AllocatedUnfairLock<AppState>(initialState: .init())
+        let json = """
+            [
+              {
+                "id": "custom-runner",
+                "name": "Custom Runner",
+                "isCustom": true,
+                "isTemplate": false,
+                "frameOrder": [0]
+              }
+            ]
+            """
+        let sut = RunnerService(.testDependencies(
+            appStateClient: .testDependency(appState),
+            dataClient: testDependency(of: DataClient.self) {
+                $0.read = { _ in Data(json.utf8) }
+            },
+            fileManagerClient: testDependency(of: FileManagerClient.self) {
+                $0.fileExists = { $0.hasSuffix("RunCatNeo/") || $0.hasSuffix("CUSTOM_RUNNERS.json") }
+            },
+            userDefaultsClient: testDependency(of: UserDefaultsClient.self) {
+                $0.string = { _ in "custom-runner" }
+            }
+        ))
+        try sut.setup()
+        #expect(appState.withLock(\.runnerBundles.latestValue)?.runner == Runner.default)
+    }
+
+    @Test
     func setup_falls_back_to_default_runner_when_stored_runnerID_is_unknown() throws {
         let appState = AllocatedUnfairLock<AppState>(initialState: .init())
         let sut = RunnerService(.testDependencies(
