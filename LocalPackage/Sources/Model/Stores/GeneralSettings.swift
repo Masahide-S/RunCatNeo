@@ -38,6 +38,8 @@ public final class GeneralSettings: Composable {
     public var isFlippedHorizontally: Bool
     public var showsMetricsBar: Bool
     public var launchesAtLogin: Bool
+    public var showingAlert: Bool
+    public var error: RCNError?
     public let action: (Action) async -> Void
 
     public init(
@@ -48,6 +50,8 @@ public final class GeneralSettings: Composable {
         isFlippedHorizontally: Bool? = nil,
         showsMetricsBar: Bool? = nil,
         launchesAtLogin: Bool? = nil,
+        showingAlert: Bool = false,
+        error: RCNError? = nil,
         action: @escaping (Action) async -> Void =  { _ in }
     ) {
         self.appStateClient = appDependencies.appStateClient
@@ -62,6 +66,8 @@ public final class GeneralSettings: Composable {
         self.isFlippedHorizontally = isFlippedHorizontally ?? userDefaultsRepository.isFlippedHorizontally
         self.showsMetricsBar = showsMetricsBar ?? userDefaultsRepository.showsMetricsBar
         self.launchesAtLogin =  launchesAtLogin ?? launchAtLoginRepository.isEnabled
+        self.showingAlert = showingAlert
+        self.error = error
         self.action = action
     }
 
@@ -100,7 +106,8 @@ public final class GeneralSettings: Composable {
                 try runnerService.update(runner: runner)
                 currentRunner = runner
             } catch {
-                logService.critical(.savingCustomRunnerFailed(error))
+                self.error = .customRunner(.loadingFailed)
+                showingAlert = true
             }
 
         case let .slowDownUnderLoadToggleSwitched(isOn):

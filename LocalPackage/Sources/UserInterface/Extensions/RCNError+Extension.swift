@@ -47,6 +47,8 @@ extension RCNError.CustomMetrics: LocalizedError {
         let localizationValue: String.LocalizationValue = switch self {
         case .fileUnreadable:
             "fileUnreadable"
+        case .invalidFormat:
+            "invalidFormat"
         }
         return String(localized: localizationValue, bundle: .module)
     }

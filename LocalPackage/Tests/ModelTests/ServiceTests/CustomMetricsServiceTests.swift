@@ -71,7 +71,22 @@ struct CustomMetricsServiceTests {
     }
 
     @Test
-    func addSource_throws_when_snapshot_decode_fails() {
+    func addSource_throws_fileUnreadable_when_read_fails() {
+        let sut = CustomMetricsService(.testDependencies(
+            dataClient: testDependency(of: DataClient.self) {
+                $0.read = { _ in throw URLError(.unknown) }
+            },
+            urlClient: testDependency(of: URLClient.self) {
+                $0.startAccessingSecurityScopedResource = { _ in true }
+            }
+        ))
+        #expect(throws: RCNError.customMetrics(.fileUnreadable)) {
+            try sut.addSource(of: URL(filePath: "/tmp/card.json"))
+        }
+    }
+
+    @Test
+    func addSource_throws_invalidFormat_when_snapshot_decode_fails() {
         let sut = CustomMetricsService(.testDependencies(
             dataClient: testDependency(of: DataClient.self) {
                 $0.read = { _ in Data("not json".utf8) }
@@ -80,7 +95,7 @@ struct CustomMetricsServiceTests {
                 $0.startAccessingSecurityScopedResource = { _ in true }
             }
         ))
-        #expect(throws: DecodingError.self) {
+        #expect(throws: RCNError.customMetrics(.invalidFormat)) {
             try sut.addSource(of: URL(filePath: "/tmp/card.json"))
         }
     }

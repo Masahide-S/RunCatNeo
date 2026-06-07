@@ -21,8 +21,23 @@
 import Logging
 
 public enum ErrorEvent {
-    case none
+    case importingCustomMetricsSourceFailed(any Error)
+    case importingFrameImagesFailed(any Error)
 
-    public var message: Logger.Message { "" }
-    public var metadata: Logger.Metadata? { nil }
+    public var message: Logger.Message {
+        switch self {
+        case .importingCustomMetricsSourceFailed:
+            "Failed importing custom metrics source."
+        case .importingFrameImagesFailed:
+            "Failed importing frame images."
+        }
+    }
+
+    public var metadata: Logger.Metadata? {
+        switch self {
+        case let .importingCustomMetricsSourceFailed(error),
+            let .importingFrameImagesFailed(error):
+            ["cause": "\(error.localizedDescription)"]
+        }
+    }
 }

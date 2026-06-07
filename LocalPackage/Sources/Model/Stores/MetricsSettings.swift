@@ -40,6 +40,8 @@ public final class MetricsSettings: Composable {
     public var showingFileImporter: Bool
     public var showingConfirmationDialog: Bool
     public var pendingRemovalSourceID: UUID?
+    public var showingAlert: Bool
+    public var error: RCNError?
     public let action: (Action) async -> Void
 
     public var customMetricsSchemaURL: URL? {
@@ -54,6 +56,8 @@ public final class MetricsSettings: Composable {
         showingFileImporter: Bool = false,
         showingConfirmationDialog: Bool = false,
         pendingRemovalSourceID: UUID? = nil,
+        showingAlert: Bool = false,
+        error: RCNError? = nil,
         action: @escaping (Action) async -> Void = { _ in }
     ) {
         self.appStateClient = appDependencies.appStateClient
@@ -68,6 +72,8 @@ public final class MetricsSettings: Composable {
         self.showingFileImporter = showingFileImporter
         self.showingConfirmationDialog = showingConfirmationDialog
         self.pendingRemovalSourceID = pendingRemovalSourceID
+        self.showingAlert = showingAlert
+        self.error = error
         self.action = action
     }
 
@@ -134,13 +140,14 @@ public final class MetricsSettings: Composable {
                 customMetricsSources = userDefaultsRepository.customMetricsConfiguration.sources
                 customMetricsService.emitConfigurationChange()
             } catch let error as RCNError {
-                print(error.localizedDescription)
+                self.error = error
+                showingAlert = true
             } catch {
                 logService.critical(.unknown(error))
             }
 
         case let .onCompletionFileImporter(.failure(error)):
-            logService.critical(.unknown(error))
+            logService.error(.importingCustomMetricsSourceFailed(error))
 
         case let .removeCustomMetricsSourceButtonTapped(id):
             pendingRemovalSourceID = id
@@ -163,7 +170,8 @@ public final class MetricsSettings: Composable {
                     for: source
                 )
             } catch {
-                logService.critical(.unknown(error))
+                self.error = .customMetrics(.fileUnreadable)
+                showingAlert = true
             }
         }
     }

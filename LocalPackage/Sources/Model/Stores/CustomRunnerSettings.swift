@@ -141,7 +141,7 @@ public final class CustomRunnerSettings: Composable {
                 self.error = error
                 showingAlert = true
             } catch {
-                logService.critical(.unknown(error))
+                logService.error(.importingFrameImagesFailed(error))
             }
 
         case .addFrameButtonTapped:
@@ -200,11 +200,11 @@ public final class CustomRunnerSettings: Composable {
                 self.error = error
                 showingAlert = true
             } catch {
-                logService.critical(.unknown(error))
+                logService.error(.importingFrameImagesFailed(error))
             }
 
         case let .onCompletionFileImporter(.failure(error)):
-            logService.critical(.importingFrameImagesFailed(error))
+            logService.error(.importingFrameImagesFailed(error))
         }
     }
 

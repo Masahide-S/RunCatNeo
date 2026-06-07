@@ -53,8 +53,12 @@ struct CustomMetricsService {
         defer {
             urlClient.stopAccessingSecurityScopedResource(url)
         }
-        let data = try dataClient.read(url)
-        let snapshot = try snapshotDecoder.decode(CustomMetricsSnapshot.self, from: data)
+        guard let data = try? dataClient.read(url) else {
+            throw RCNError.customMetrics(.fileUnreadable)
+        }
+        guard let snapshot = try? snapshotDecoder.decode(CustomMetricsSnapshot.self, from: data) else {
+            throw RCNError.customMetrics(.invalidFormat)
+        }
         let bookmark = try urlClient.bookmarkData(url, .withSecurityScope)
         let source = CustomMetricsSource(
             id: uuidClient.create(),

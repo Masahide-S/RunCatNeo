@@ -119,6 +119,12 @@ struct MetricsSettingsView: View {
         )
         .fileDialogMessage(Text("addingCustomMetricsSourceMessage", bundle: .module))
         .fileDialogConfirmationLabel(Text("addingCustomMetricsSourcePrompt", bundle: .module))
+        .alert(
+            isPresented: $store.showingAlert,
+            error: store.error,
+            actions: { _ in },
+            message: { _ in }
+        )
         .confirmationDialog(
             Text("removingCustomMetricsConfirmationTitle", bundle: .module),
             isPresented: $store.showingConfirmationDialog,

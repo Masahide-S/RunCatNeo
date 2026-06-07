@@ -68,6 +68,42 @@ struct MetricsSettingsTests {
     }
 
     @MainActor @Test
+    func send_onCompletionFileImporter_shows_alert_when_file_is_unreadable() async {
+        let storage = makeStorage()
+        let sut = MetricsSettings(.testDependencies(
+            dataClient: testDependency(of: DataClient.self) {
+                $0.read = { _ in throw URLError(.unknown) }
+            },
+            urlClient: testDependency(of: URLClient.self) {
+                $0.startAccessingSecurityScopedResource = { _ in true }
+            },
+            userDefaultsClient: storage.client
+        ))
+        await sut.send(.onCompletionFileImporter(.success(URL(filePath: "/tmp/metrics.json"))))
+        #expect(sut.error == .customMetrics(.fileUnreadable))
+        #expect(sut.showingAlert == true)
+        #expect(sut.customMetricsSources.isEmpty)
+    }
+
+    @MainActor @Test
+    func send_onCompletionFileImporter_shows_alert_when_json_is_invalid() async {
+        let storage = makeStorage()
+        let sut = MetricsSettings(.testDependencies(
+            dataClient: testDependency(of: DataClient.self) {
+                $0.read = { _ in Data("not json".utf8) }
+            },
+            urlClient: testDependency(of: URLClient.self) {
+                $0.startAccessingSecurityScopedResource = { _ in true }
+            },
+            userDefaultsClient: storage.client
+        ))
+        await sut.send(.onCompletionFileImporter(.success(URL(filePath: "/tmp/metrics.json"))))
+        #expect(sut.error == .customMetrics(.invalidFormat))
+        #expect(sut.showingAlert == true)
+        #expect(sut.customMetricsSources.isEmpty)
+    }
+
+    @MainActor @Test
     func send_onCompletionFileImporter_failure_does_not_throw() async {
         struct DummyError: Error {}
         let storage = makeStorage()
@@ -257,6 +293,8 @@ struct MetricsSettingsTests {
         ))
         await sut.send(.customMetricsSourceLinkTapped(source))
         #expect(activatedURLs.withLock(\.self).isEmpty)
+        #expect(sut.error == .customMetrics(.fileUnreadable))
+        #expect(sut.showingAlert == true)
     }
 
     private struct Storage {

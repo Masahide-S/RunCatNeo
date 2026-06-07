@@ -22,8 +22,6 @@ import Logging
 
 public enum CriticalEvent {
     case setupFailed(any Error)
-    case importingFrameImagesFailed(any Error)
-    case loadingCustomRunnerFailed(any Error)
     case savingCustomRunnerFailed(any Error)
     case deletingCustomRunnerFailed(any Error)
     case unknown(any Error)
@@ -32,10 +30,6 @@ public enum CriticalEvent {
         switch self {
         case .setupFailed:
             "Failed to setup."
-        case .importingFrameImagesFailed:
-            "Failed importing frame images."
-        case .loadingCustomRunnerFailed:
-            "Failed loading custom runner."
         case .savingCustomRunnerFailed:
             "Failed saving custom runner."
         case .deletingCustomRunnerFailed:
@@ -48,8 +42,6 @@ public enum CriticalEvent {
     public var metadata: Logger.Metadata? {
         switch self {
         case let .setupFailed(error),
-            let .importingFrameImagesFailed(error),
-            let .loadingCustomRunnerFailed(error),
             let .savingCustomRunnerFailed(error),
             let .deletingCustomRunnerFailed(error),
             let .unknown(error):

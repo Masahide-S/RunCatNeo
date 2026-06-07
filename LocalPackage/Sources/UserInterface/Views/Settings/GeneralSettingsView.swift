@@ -81,6 +81,12 @@ struct GeneralSettingsView: View {
         }
         .formStyle(.grouped)
         .fixedSize()
+        .alert(
+            isPresented: $store.showingAlert,
+            error: store.error,
+            actions: { _ in },
+            message: { _ in }
+        )
         .task {
             await store.send(.task(String(describing: Self.self)))
         }
