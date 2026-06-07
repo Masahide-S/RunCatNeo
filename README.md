@@ -36,6 +36,13 @@ Please refer to the following article for more details.
 
 https://dev.to/kyome22/luca-a-modern-architecture-for-swiftui-development-3g2i
 
+## Custom Metrics
+
+RunCat can watch any local JSON file in the documented format and render it as a card on the dashboard. Use it to display Claude Code usage, GPU temperature, GitHub contributions, remaining reminders, or anything else you can write to a file.
+
+- [JSON schema](docs/CustomMetricsSchema.md)
+- [Claude Code statusLine sample](docs/samples/claude-code/)
+
 ## RunCat Developers' Community
 
 This is a space for RunCat contributors to communicate closely regarding development and operations.
