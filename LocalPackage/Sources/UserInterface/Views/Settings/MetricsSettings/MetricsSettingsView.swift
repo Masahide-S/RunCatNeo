@@ -87,23 +87,33 @@ struct MetricsSettingsView: View {
                             Image(systemName: "plus")
                         }
                     }
+                    Button {
+                        Task {
+                            await store.send(.helpButtonTapped)
+                        }
+                    } label: {
+                        Image(systemName: "info.circle")
+                    }
+                    .buttonStyle(.borderless)
+                    .popover(isPresented: $store.showingHelpPopover, arrowEdge: .bottom) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("customMetricsDescription", bundle: .module)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if let url = store.customMetricsSchemaURL {
+                                Link(destination: url) {
+                                    Text("viewJsonSchemaAndSamples", bundle: .module)
+                                        .font(.caption)
+                                }
+                            }
+                        }
+                        .padding()
+                        .frame(maxWidth: 360, alignment: .leading)
+                    }
                 }
             } header: {
                 Text("customMetrics", bundle: .module)
-            } footer: {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("customMetricsDescription", bundle: .module)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    if let url = store.customMetricsSchemaURL {
-                        Link(destination: url) {
-                            Text("viewJsonSchemaAndSamples", bundle: .module)
-                                .font(.caption)
-                        }
-                    }
-                }
-                .frame(maxWidth: 360, alignment: .leading)
             }
         }
         .formStyle(.grouped)

@@ -187,6 +187,13 @@ struct MetricsSettingsTests {
     }
 
     @MainActor @Test
+    func send_helpButtonTapped_shows_help_popover() async {
+        let sut = MetricsSettings(.testDependencies())
+        await sut.send(.helpButtonTapped)
+        #expect(sut.showingHelpPopover == true)
+    }
+
+    @MainActor @Test
     func send_onCompletionFileImporter_shows_alert_when_file_is_unreadable() async {
         let storage = UserDefaultsClient.storage()
         let sut = MetricsSettings(.testDependencies(

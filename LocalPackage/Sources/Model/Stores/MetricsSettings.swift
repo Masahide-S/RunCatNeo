@@ -41,6 +41,7 @@ public final class MetricsSettings: Composable {
     public var showingConfirmationDialog: Bool
     public var pendingRemovalSourceID: UUID?
     public var showingAlert: Bool
+    public var showingHelpPopover: Bool
     public var error: RCNError?
     public let action: (Action) async -> Void
 
@@ -57,6 +58,7 @@ public final class MetricsSettings: Composable {
         showingConfirmationDialog: Bool = false,
         pendingRemovalSourceID: UUID? = nil,
         showingAlert: Bool = false,
+        showingHelpPopover: Bool = false,
         error: RCNError? = nil,
         action: @escaping (Action) async -> Void = { _ in }
     ) {
@@ -73,6 +75,7 @@ public final class MetricsSettings: Composable {
         self.showingConfirmationDialog = showingConfirmationDialog
         self.pendingRemovalSourceID = pendingRemovalSourceID
         self.showingAlert = showingAlert
+        self.showingHelpPopover = showingHelpPopover
         self.error = error
         self.action = action
     }
@@ -133,6 +136,9 @@ public final class MetricsSettings: Composable {
 
         case .addCustomMetricsSourceButtonTapped:
             showingFileImporter = true
+
+        case .helpButtonTapped:
+            showingHelpPopover = true
 
         case let .onCompletionFileImporter(.success(url)):
             do {
@@ -196,6 +202,7 @@ public final class MetricsSettings: Composable {
         case onDisappear
         case monitorsSystemInfoToggleSwitched(SystemInfoType, Bool)
         case addCustomMetricsSourceButtonTapped
+        case helpButtonTapped
         case onCompletionFileImporter(Result<URL, any Error>)
         case removeCustomMetricsSourceButtonTapped(UUID)
         case removingCustomMetricsSourceConfirmed
