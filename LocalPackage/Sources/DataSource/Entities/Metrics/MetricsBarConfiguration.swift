@@ -18,7 +18,7 @@
  limitations under the License.
  */
 
-public struct MetricsBarConfiguration: Codable, Sendable {
+public struct MetricsBarConfiguration: Codable, Sendable, Equatable {
     public var showsCPU: Bool
     public var showsMemory: Bool
     public var showsStorage: Bool

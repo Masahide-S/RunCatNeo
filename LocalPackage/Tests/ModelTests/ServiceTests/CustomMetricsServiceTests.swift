@@ -38,7 +38,7 @@ struct CustomMetricsServiceTests {
 
     @Test
     func addSource_appends_source_built_from_snapshot_and_clients() throws {
-        let storage = makeStorage()
+        let storage = UserDefaultsClient.storage()
         let sut = CustomMetricsService(.testDependencies(
             dataClient: testDependency(of: DataClient.self) {
                 $0.read = { _ in Data(snapshotJSON.utf8) }
@@ -103,7 +103,7 @@ struct CustomMetricsServiceTests {
     @Test
     func removeSource_removes_matching_source_from_configuration() {
         let remaining = makeSource(id: UUID(2))
-        let storage = makeStorage(initialSources: [makeSource(id: UUID(1)), remaining])
+        let storage = UserDefaultsClient.storage(initialSources: [makeSource(id: UUID(1)), remaining])
         let sut = CustomMetricsService(.testDependencies(userDefaultsClient: storage.client))
         sut.removeSource(of: UUID(1))
         #expect(storage.currentConfiguration() == CustomMetricsConfiguration(sources: [remaining]))
@@ -130,7 +130,7 @@ struct CustomMetricsServiceTests {
     @Test
     func perform_persists_refreshed_bookmark_when_stale() throws {
         let source = makeSource()
-        let storage = makeStorage(initialSources: [source])
+        let storage = UserDefaultsClient.storage(initialSources: [source])
         let sut = CustomMetricsService(.testDependencies(
             urlClient: testDependency(of: URLClient.self) {
                 $0.create = { _, _ in (true, URL(filePath: "/tmp/resolved.json")) }
@@ -197,7 +197,7 @@ struct CustomMetricsServiceTests {
     func startMonitoring_observes_configured_source_and_emits_snapshot() async throws {
         let appState = AllocatedUnfairLock<AppState>(initialState: .init())
         let source = makeSource()
-        let storage = makeStorage(initialSources: [source])
+        let storage = UserDefaultsClient.storage(initialSources: [source])
         let sut = CustomMetricsService(.testDependencies(
             appStateClient: .testDependency(appState),
             dataClient: testDependency(of: DataClient.self) {
@@ -210,7 +210,7 @@ struct CustomMetricsServiceTests {
             userDefaultsClient: storage.client
         ))
         sut.startMonitoring()
-        try? await Task.sleep(for: .milliseconds(100))
+        await waitUntil { appState.withLock(\.metrics.latestValue)?.customMetricsBundles.isEmpty == false }
         #expect(appState.withLock(\.customMetricsReconcileObserver) != nil)
         #expect(Set(appState.withLock(\.customMetricsObservers).keys) == [UUID(1)])
         #expect(appState.withLock(\.metrics.latestValue)?.customMetricsBundles == [
@@ -223,7 +223,7 @@ struct CustomMetricsServiceTests {
     func startMonitoring_removes_stale_observer_when_configuration_change_is_emitted() async throws {
         let appState = AllocatedUnfairLock<AppState>(initialState: .init())
         let source = makeSource()
-        let storage = makeStorage(initialSources: [source])
+        let storage = UserDefaultsClient.storage(initialSources: [source])
         let sut = CustomMetricsService(.testDependencies(
             appStateClient: .testDependency(appState),
             dataClient: testDependency(of: DataClient.self) {
@@ -236,10 +236,10 @@ struct CustomMetricsServiceTests {
             userDefaultsClient: storage.client
         ))
         sut.startMonitoring()
-        try? await Task.sleep(for: .milliseconds(100))
+        await waitUntil { appState.withLock(\.metrics.latestValue)?.customMetricsBundles.isEmpty == false }
         sut.removeSource(of: UUID(1))
         sut.emitConfigurationChange()
-        try? await Task.sleep(for: .milliseconds(100))
+        await waitUntil { appState.withLock(\.customMetricsObservers).isEmpty }
         #expect(appState.withLock(\.customMetricsObservers).isEmpty)
         #expect(appState.withLock(\.metrics.latestValue)?.customMetricsBundles.isEmpty == true)
         sut.stopMonitoring()
@@ -253,7 +253,7 @@ struct CustomMetricsServiceTests {
             $0.metrics.send(Metrics(customMetricsBundles: [existingBundle]))
         }
         let source = makeSource()
-        let storage = makeStorage(initialSources: [source])
+        let storage = UserDefaultsClient.storage(initialSources: [source])
         let sut = CustomMetricsService(.testDependencies(
             appStateClient: .testDependency(appState),
             dataClient: testDependency(of: DataClient.self) {
@@ -266,7 +266,7 @@ struct CustomMetricsServiceTests {
             userDefaultsClient: storage.client
         ))
         sut.startMonitoring()
-        try? await Task.sleep(for: .milliseconds(100))
+        await waitUntil { appState.withLock(\.metrics.latestValue)?.customMetricsBundles.first?.isFailed == true }
         #expect(appState.withLock(\.metrics.latestValue)?.customMetricsBundles.first?.isFailed == true)
         sut.stopMonitoring()
     }
@@ -284,7 +284,7 @@ struct CustomMetricsServiceTests {
             """
         let readCount = AllocatedUnfairLock<Int>(initialState: 0)
         let source = makeSource()
-        let storage = makeStorage(initialSources: [source])
+        let storage = UserDefaultsClient.storage(initialSources: [source])
         let sut = CustomMetricsService(.testDependencies(
             appStateClient: .testDependency(appState),
             dataClient: testDependency(of: DataClient.self) {
@@ -308,7 +308,9 @@ struct CustomMetricsServiceTests {
             userDefaultsClient: storage.client
         ))
         sut.startMonitoring()
-        try? await Task.sleep(for: .milliseconds(100))
+        await waitUntil {
+            appState.withLock(\.metrics.latestValue)?.customMetricsBundles.first?.snapshot.title == "Updated Card"
+        }
         #expect(appState.withLock(\.metrics.latestValue)?.customMetricsBundles == [
             CustomMetricsBundle(
                 id: UUID(1),
@@ -326,7 +328,7 @@ struct CustomMetricsServiceTests {
     func startMonitoring_appends_failed_placeholder_bundle_when_source_has_never_loaded() async throws {
         let appState = AllocatedUnfairLock<AppState>(initialState: .init())
         let source = makeSource()
-        let storage = makeStorage(initialSources: [source])
+        let storage = UserDefaultsClient.storage(initialSources: [source])
         let sut = CustomMetricsService(.testDependencies(
             appStateClient: .testDependency(appState),
             dataClient: testDependency(of: DataClient.self) {
@@ -339,7 +341,7 @@ struct CustomMetricsServiceTests {
             userDefaultsClient: storage.client
         ))
         sut.startMonitoring()
-        try? await Task.sleep(for: .milliseconds(100))
+        await waitUntil { appState.withLock(\.metrics.latestValue)?.customMetricsBundles.isEmpty == false }
         #expect(appState.withLock(\.metrics.latestValue)?.customMetricsBundles == [
             CustomMetricsBundle(
                 id: UUID(1),
@@ -354,35 +356,4 @@ struct CustomMetricsServiceTests {
         sut.stopMonitoring()
     }
 
-    private struct Storage {
-        let lock: AllocatedUnfairLock<[String: Data]>
-        let client: UserDefaultsClient
-
-        func currentConfiguration() -> CustomMetricsConfiguration? {
-            guard let data = lock.withLock({ $0[.customMetricsConfiguration] }) else {
-                return nil
-            }
-            return try? JSONDecoder().decode(CustomMetricsConfiguration.self, from: data)
-        }
-    }
-
-    private func makeStorage(initialSources: [CustomMetricsSource] = []) -> Storage {
-        var initial = [String: Data]()
-        if !initialSources.isEmpty,
-           let encoded = try? JSONEncoder().encode(CustomMetricsConfiguration(sources: initialSources)) {
-            initial[.customMetricsConfiguration] = encoded
-        }
-        let lock = AllocatedUnfairLock<[String: Data]>(initialState: initial)
-        let client = testDependency(of: UserDefaultsClient.self) {
-            $0.data = { key in lock.withLock { $0[key] } }
-            $0.set = { rawValue, key in
-                let dataValue = rawValue as? Data
-                lock.withLock { $0[key] = dataValue }
-            }
-            $0.removeObject = { key in
-                lock.withLock { $0[key] = nil }
-            }
-        }
-        return Storage(lock: lock, client: client)
-    }
 }

@@ -1,5 +1,4 @@
 import AllocatedUnfairLock
-import CoreGraphics
 import Foundation
 import SystemInfoKit
 import Testing
@@ -334,7 +333,7 @@ struct RunnerServiceTests {
                 $0.convert = { _, _ in Data("png".utf8) }
             }
         ))
-        #expect(try sut.convertToCustomFrame(from: makeFrameImage()) == .custom(Data("png".utf8)))
+        #expect(try sut.convertToCustomFrame(from: FrameImage.dummy()) == .custom(Data("png".utf8)))
     }
 
     @Test
@@ -345,7 +344,7 @@ struct RunnerServiceTests {
             }
         ))
         #expect(throws: URLError.self) {
-            try sut.convertToCustomFrame(from: makeFrameImage())
+            try sut.convertToCustomFrame(from: FrameImage.dummy())
         }
     }
 
@@ -363,7 +362,7 @@ struct RunnerServiceTests {
             }
         ))
         let runner = Runner(id: "custom-runner", name: "Custom Runner", isTemplate: false, frameOrder: .custom([0, 1]))
-        try sut.save(customRunner: runner, with: [makeFrameImage(), makeFrameImage()])
+        try sut.save(customRunner: runner, with: [FrameImage.dummy(), FrameImage.dummy()])
         let writtenFiles = written.withLock(\.self)
         #expect(writtenFiles.map(\.url.lastPathComponent) == ["frame-0.png", "frame-1.png", "CUSTOM_RUNNERS.json"])
         #expect(writtenFiles.first?.data == Data("png".utf8))
@@ -414,24 +413,5 @@ struct RunnerServiceTests {
         let expectedJSON = #"[{"frameOrder":[0],"id":"other-runner","isCustom":true,"isTemplate":false,"name":"Other Runner"}]"#
         #expect(writtenJSON.withLock(\.self) == expectedJSON)
         #expect(removedURL.withLock(\.self)?.hasPathSuffix("RunCatNeo/custom-runner") == true)
-    }
-}
-
-private func makeFrameImage() -> FrameImage {
-    let context = CGContext(
-        data: nil,
-        width: 1,
-        height: 1,
-        bitsPerComponent: 8,
-        bytesPerRow: 0,
-        space: CGColorSpaceCreateDeviceRGB(),
-        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-    )!
-    return FrameImage(id: UUID(), cgImage: context.makeImage()!)
-}
-
-private extension URL {
-    func hasPathSuffix(_ suffix: String) -> Bool {
-        path(percentEncoded: false).hasSuffix(suffix)
     }
 }

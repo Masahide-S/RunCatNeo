@@ -1,4 +1,5 @@
 import AllocatedUnfairLock
+import AppKit
 import Foundation
 import Testing
 
@@ -6,6 +7,32 @@ import Testing
 @testable import Model
 
 struct DashboardTests {
+    @MainActor @Test
+    func send_task_loads_latest_metrics_and_observes_stream() async {
+        let appState = AllocatedUnfairLock<AppState>(initialState: .init())
+        let initialMetrics = Metrics.dummy(customMetricsTitle: "Initial")
+        appState.withLock { $0.metrics.send(initialMetrics) }
+        let sut = Dashboard(.testDependencies(appStateClient: .testDependency(appState)))
+        await sut.send(.task("DashboardTests"))
+        #expect(sut.customMetricsBundles == initialMetrics.customMetricsBundles)
+        let updatedMetrics = Metrics.dummy(customMetricsTitle: "Updated")
+        appState.withLock { $0.metrics.send(updatedMetrics) }
+        await waitUntil { sut.customMetricsBundles == updatedMetrics.customMetricsBundles }
+        #expect(sut.customMetricsBundles == updatedMetrics.customMetricsBundles)
+        await sut.send(.onDisappear)
+    }
+
+    @MainActor @Test
+    func send_onDisappear_stops_observing_metrics() async {
+        let appState = AllocatedUnfairLock<AppState>(initialState: .init())
+        let sut = Dashboard(.testDependencies(appStateClient: .testDependency(appState)))
+        await sut.send(.task("DashboardTests"))
+        await sut.send(.onDisappear)
+        appState.withLock { $0.metrics.send(.dummy(customMetricsTitle: "Ignored")) }
+        try? await Task.sleep(for: .milliseconds(50))
+        #expect(sut.customMetricsBundles.isEmpty)
+    }
+
     @MainActor @Test
     func send_settingsButtonTapped() async {
         let callStack = AllocatedUnfairLock<[String]>(initialState: [])
@@ -89,5 +116,33 @@ struct DashboardTests {
         ))
         await sut.send(.quitButtonTapped)
         #expect(callStack.withLock(\.self) == ["terminate"])
+    }
+
+    @MainActor @Test
+    func send_debugSleepButtonTapped_posts_willSleepNotification() async {
+        let postedNames = AllocatedUnfairLock<[Notification.Name]>(initialState: [])
+        let sut = Dashboard(.testDependencies(
+            nsWorkspaceClient: testDependency(of: NSWorkspaceClient.self) {
+                $0.post = { name, _ in
+                    postedNames.withLock { $0.append(name) }
+                }
+            }
+        ))
+        await sut.send(.debugSleepButtonTapped)
+        #expect(postedNames.withLock(\.self) == [NSWorkspace.willSleepNotification])
+    }
+
+    @MainActor @Test
+    func send_debugWakeUpButtonTapped_posts_didWakeNotification() async {
+        let postedNames = AllocatedUnfairLock<[Notification.Name]>(initialState: [])
+        let sut = Dashboard(.testDependencies(
+            nsWorkspaceClient: testDependency(of: NSWorkspaceClient.self) {
+                $0.post = { name, _ in
+                    postedNames.withLock { $0.append(name) }
+                }
+            }
+        ))
+        await sut.send(.debugWakeUpButtonTapped)
+        #expect(postedNames.withLock(\.self) == [NSWorkspace.didWakeNotification])
     }
 }

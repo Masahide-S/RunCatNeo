@@ -1,5 +1,6 @@
 import AllocatedUnfairLock
 import Foundation
+import SystemInfoKit
 import Testing
 
 @testable import DataSource
@@ -7,8 +8,126 @@ import Testing
 
 struct MetricsSettingsTests {
     @MainActor @Test
+    func send_task_refreshes_failed_source_ids_when_metrics_change() async {
+        let appState = AllocatedUnfairLock<AppState>(initialState: .init())
+        let snapshot = CustomMetricsSnapshot(title: "Card", lastUpdatedDate: Date(timeIntervalSince1970: 0))
+        let failedBundle = CustomMetricsBundle(id: UUID(1), snapshot: snapshot, isFailed: true)
+        appState.withLock { $0.metrics.send(Metrics(customMetricsBundles: [failedBundle])) }
+        let sut = MetricsSettings(.testDependencies(appStateClient: .testDependency(appState)))
+        await sut.send(.task("MetricsSettingsTests"))
+        #expect(sut.failedCustomMetricsSourceIDs == [UUID(1)])
+        let recoveredBundle = CustomMetricsBundle(id: UUID(1), snapshot: snapshot, isFailed: false)
+        appState.withLock { $0.metrics.send(Metrics(customMetricsBundles: [recoveredBundle])) }
+        await waitUntil { sut.failedCustomMetricsSourceIDs.isEmpty }
+        #expect(sut.failedCustomMetricsSourceIDs.isEmpty)
+        await sut.send(.onDisappear)
+    }
+
+    @MainActor @Test
+    func send_task_refreshes_configuration_when_change_event_is_emitted() async throws {
+        let appState = AllocatedUnfairLock<AppState>(initialState: .init())
+        let storage = UserDefaultsClient.storage()
+        let sut = MetricsSettings(.testDependencies(
+            appStateClient: .testDependency(appState),
+            userDefaultsClient: storage.client
+        ))
+        await sut.send(.task("MetricsSettingsTests"))
+        #expect(sut.systemMetricsConfiguration == .default)
+        let updatedConfiguration = SystemMetricsConfiguration(
+            monitorsMemory: false,
+            monitorsStorage: false,
+            monitorsBattery: false,
+            monitorsNetwork: false
+        )
+        let encodedConfiguration = try JSONEncoder().encode(updatedConfiguration)
+        storage.lock.withLock { $0[.systemMetricsConfiguration] = encodedConfiguration }
+        appState.withLock { $0.systemMetricsConfigurationChanges.send() }
+        await waitUntil { sut.systemMetricsConfiguration == updatedConfiguration }
+        #expect(sut.systemMetricsConfiguration == updatedConfiguration)
+        await sut.send(.onDisappear)
+    }
+
+    @MainActor @Test
+    func send_onDisappear_stops_observing_configuration_changes() async throws {
+        let appState = AllocatedUnfairLock<AppState>(initialState: .init())
+        let storage = UserDefaultsClient.storage()
+        let sut = MetricsSettings(.testDependencies(
+            appStateClient: .testDependency(appState),
+            userDefaultsClient: storage.client
+        ))
+        await sut.send(.task("MetricsSettingsTests"))
+        await sut.send(.onDisappear)
+        let updatedConfiguration = SystemMetricsConfiguration(
+            monitorsMemory: false,
+            monitorsStorage: false,
+            monitorsBattery: false,
+            monitorsNetwork: false
+        )
+        let encodedConfiguration = try JSONEncoder().encode(updatedConfiguration)
+        storage.lock.withLock { $0[.systemMetricsConfiguration] = encodedConfiguration }
+        appState.withLock { $0.systemMetricsConfigurationChanges.send() }
+        try? await Task.sleep(for: .milliseconds(50))
+        #expect(sut.systemMetricsConfiguration == .default)
+    }
+
+    @MainActor @Test
+    func send_monitorsSystemInfoToggleSwitched_persists_configurations_and_notifies() async throws {
+        let appState = AllocatedUnfairLock<AppState>(initialState: .init())
+        let activationRequests = AllocatedUnfairLock<[SystemInfoType: Bool]?>(initialState: nil)
+        let storage = UserDefaultsClient.storage()
+        let initialBarConfiguration = MetricsBarConfiguration(
+            showsCPU: true,
+            showsMemory: true,
+            showsStorage: false,
+            showsBattery: false,
+            showsNetwork: false
+        )
+        let encodedBarConfiguration = try JSONEncoder().encode(initialBarConfiguration)
+        storage.lock.withLock { $0[.metricsBarConfiguration] = encodedBarConfiguration }
+        let sut = MetricsSettings(.testDependencies(
+            appStateClient: .testDependency(appState),
+            systemInfoObserverClient: testDependency(of: SystemInfoObserverClient.self) {
+                $0.toggleActivation = { requests in
+                    activationRequests.withLock { $0 = requests }
+                }
+            },
+            userDefaultsClient: storage.client
+        ))
+        await sut.send(.monitorsSystemInfoToggleSwitched(.memory, false))
+        #expect(sut.systemMetricsConfiguration.monitorsMemory == false)
+        let storedConfigurationData = storage.lock.withLock { $0[.systemMetricsConfiguration] }
+        let storedConfiguration = try JSONDecoder().decode(
+            SystemMetricsConfiguration.self,
+            from: try #require(storedConfigurationData)
+        )
+        #expect(storedConfiguration.monitorsMemory == false)
+        let storedBarConfigurationData = storage.lock.withLock { $0[.metricsBarConfiguration] }
+        let storedBarConfiguration = try JSONDecoder().decode(
+            MetricsBarConfiguration.self,
+            from: try #require(storedBarConfigurationData)
+        )
+        #expect(storedBarConfiguration.showsMemory == false)
+        #expect(activationRequests.withLock(\.self) == [.memory: false])
+        #expect(appState.withLock(\.systemMetricsConfigurationChanges.latestValue) != nil)
+    }
+
+    @MainActor @Test
+    func send_monitorsSystemInfoToggleSwitched_cpu_is_noop() async {
+        let toggleActivationCount = AllocatedUnfairLock<Int>(initialState: 0)
+        let sut = MetricsSettings(.testDependencies(
+            systemInfoObserverClient: testDependency(of: SystemInfoObserverClient.self) {
+                $0.toggleActivation = { _ in
+                    toggleActivationCount.withLock { $0 += 1 }
+                }
+            }
+        ))
+        await sut.send(.monitorsSystemInfoToggleSwitched(.cpu, false))
+        #expect(toggleActivationCount.withLock(\.self) == 0)
+    }
+
+    @MainActor @Test
     func send_task_reloads_customMetricsSources_from_user_defaults() async {
-        let storage = makeStorage(initialSources: [
+        let storage = UserDefaultsClient.storage(initialSources: [
             CustomMetricsSource(
                 id: UUID(1),
                 displayName: "Existing",
@@ -34,7 +153,7 @@ struct MetricsSettingsTests {
 
     @MainActor @Test
     func send_onCompletionFileImporter_success_appends_source_and_emits_change() async throws {
-        let storage = makeStorage()
+        let storage = UserDefaultsClient.storage()
         let emittedChange = AllocatedUnfairLock<Int>(initialState: 0)
         let appStateClient = AppStateClient.testDependency(.init(initialState: .init()))
         Task {
@@ -69,7 +188,7 @@ struct MetricsSettingsTests {
 
     @MainActor @Test
     func send_onCompletionFileImporter_shows_alert_when_file_is_unreadable() async {
-        let storage = makeStorage()
+        let storage = UserDefaultsClient.storage()
         let sut = MetricsSettings(.testDependencies(
             dataClient: testDependency(of: DataClient.self) {
                 $0.read = { _ in throw URLError(.unknown) }
@@ -87,7 +206,7 @@ struct MetricsSettingsTests {
 
     @MainActor @Test
     func send_onCompletionFileImporter_shows_alert_when_json_is_invalid() async {
-        let storage = makeStorage()
+        let storage = UserDefaultsClient.storage()
         let sut = MetricsSettings(.testDependencies(
             dataClient: testDependency(of: DataClient.self) {
                 $0.read = { _ in Data("not json".utf8) }
@@ -106,7 +225,7 @@ struct MetricsSettingsTests {
     @MainActor @Test
     func send_onCompletionFileImporter_failure_does_not_throw() async {
         struct DummyError: Error {}
-        let storage = makeStorage()
+        let storage = UserDefaultsClient.storage()
         let sut = MetricsSettings(.testDependencies(
             userDefaultsClient: storage.client
         ))
@@ -117,7 +236,7 @@ struct MetricsSettingsTests {
     @MainActor @Test
     func send_removeCustomMetricsSourceButtonTapped_marks_pending_and_shows_dialog() async {
         let existingID = UUID(2)
-        let storage = makeStorage(initialSources: [
+        let storage = UserDefaultsClient.storage(initialSources: [
             CustomMetricsSource(
                 id: existingID,
                 displayName: "Pending",
@@ -139,7 +258,7 @@ struct MetricsSettingsTests {
     @MainActor @Test
     func send_removingCustomMetricsSourceConfirmed_removes_pending_source() async {
         let existingID = UUID(3)
-        let storage = makeStorage(initialSources: [
+        let storage = UserDefaultsClient.storage(initialSources: [
             CustomMetricsSource(
                 id: existingID,
                 displayName: "Doomed",
@@ -161,7 +280,7 @@ struct MetricsSettingsTests {
     @MainActor @Test
     func send_removingCustomMetricsSourceConfirmed_with_no_pending_is_noop() async {
         let existingID = UUID(4)
-        let storage = makeStorage(initialSources: [
+        let storage = UserDefaultsClient.storage(initialSources: [
             CustomMetricsSource(
                 id: existingID,
                 displayName: "Safe",
@@ -181,7 +300,7 @@ struct MetricsSettingsTests {
     @MainActor @Test
     func send_removingCustomMetricsSourceCancelled_clears_pending_without_removing() async {
         let existingID = UUID(5)
-        let storage = makeStorage(initialSources: [
+        let storage = UserDefaultsClient.storage(initialSources: [
             CustomMetricsSource(
                 id: existingID,
                 displayName: "Spared",
@@ -234,7 +353,7 @@ struct MetricsSettingsTests {
         let resolvedURL = URL(filePath: "/tmp/resolved.json")
         let refreshedBookmark = Data([0xBB, 0xCC])
         let existingID = UUID(7)
-        let storage = makeStorage(initialSources: [
+        let storage = UserDefaultsClient.storage(initialSources: [
             CustomMetricsSource(
                 id: existingID,
                 displayName: "Stale",
@@ -297,41 +416,4 @@ struct MetricsSettingsTests {
         #expect(sut.showingAlert == true)
     }
 
-    private struct Storage {
-        let lock: AllocatedUnfairLock<[String: Data]>
-        let client: UserDefaultsClient
-
-        func currentConfiguration() -> CustomMetricsConfiguration? {
-            guard let data = lock.withLock({ $0["CUSTOM_METRICS_CONFIGURATION"] }) else {
-                return nil
-            }
-            return try? JSONDecoder().decode(CustomMetricsConfiguration.self, from: data)
-        }
-    }
-
-    private func makeStorage(initialSources: [CustomMetricsSource] = []) -> Storage {
-        var initial: [String: Data] = [:]
-        if !initialSources.isEmpty,
-           let encoded = try? JSONEncoder().encode(CustomMetricsConfiguration(sources: initialSources)) {
-            initial["CUSTOM_METRICS_CONFIGURATION"] = encoded
-        }
-        let lock = AllocatedUnfairLock<[String: Data]>(initialState: initial)
-        let client = testDependency(of: UserDefaultsClient.self) {
-            $0.data = { key in lock.withLock { $0[key] } }
-            $0.set = { rawValue, key in
-                let dataValue = rawValue as? Data
-                lock.withLock { storage in
-                    if let dataValue {
-                        storage[key] = dataValue
-                    } else {
-                        storage[key] = nil
-                    }
-                }
-            }
-            $0.removeObject = { key in
-                lock.withLock { $0[key] = nil }
-            }
-        }
-        return Storage(lock: lock, client: client)
-    }
 }
