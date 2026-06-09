@@ -10,6 +10,19 @@ struct CustomRunnerSettingsTests {
         Runner(id: "custom-runner", name: "Custom Runner", isTemplate: false, frameOrder: .custom([0]))
     }
 
+    private func errorRecorder() -> (
+        lock: AllocatedUnfairLock<RCNError?>,
+        action: (CustomRunnerSettings.Action) async -> Void
+    ) {
+        let lock = AllocatedUnfairLock<RCNError?>(initialState: nil)
+        let action: (CustomRunnerSettings.Action) async -> Void = { action in
+            if case let .onError(error) = action {
+                lock.withLock { $0 = error }
+            }
+        }
+        return (lock, action)
+    }
+
     @MainActor @Test
     func send_task_filters_custom_runners_and_starts_frame_preview() async {
         let appState = AllocatedUnfairLock<AppState>(initialState: .init())
@@ -25,7 +38,7 @@ struct CustomRunnerSettingsTests {
             .testDependencies(appStateClient: .testDependency(appState)),
             frameImages: frameImages
         )
-        await sut.send(.task("CustomRunnerSettingsTests"))
+        await sut.send(.task)
         await waitUntil { sut.previewingFrameImage != nil }
         #expect(sut.customRunnerBundleList == [customBundle])
         #expect(sut.previewingFrameImage == frameImages[1])
@@ -33,18 +46,18 @@ struct CustomRunnerSettingsTests {
     }
 
     @MainActor @Test
-    func send_deleteButtonTapped_shows_alert_when_runner_is_in_use() async {
+    func send_deleteButtonTapped_forwards_error_when_runner_is_in_use() async {
         let appState = AllocatedUnfairLock<AppState>(initialState: .init())
         let bundle = RunnerBundle(runner: customRunner, frame: .custom(Data()))
         appState.withLock { $0.runnerBundles.send(bundle) }
+        let recorder = errorRecorder()
         let sut = CustomRunnerSettings(
             .testDependencies(appStateClient: .testDependency(appState)),
-            selectedCustomRunner: customRunner,
-            customRunnerBundleList: [bundle]
+            customRunnerBundleList: [bundle],
+            action: recorder.action
         )
-        await sut.send(.deleteButtonTapped)
-        #expect(sut.error == .customRunner(.runnerInUse))
-        #expect(sut.showingAlert == true)
+        await sut.send(.deleteButtonTapped(customRunner))
+        #expect(recorder.lock.withLock(\.self) == .customRunner(.runnerInUse))
         #expect(sut.customRunnerBundleList == [bundle])
     }
 
@@ -54,15 +67,15 @@ struct CustomRunnerSettingsTests {
         appState.withLock {
             $0.runnerBundles.send(RunnerBundle(runner: .default, frame: .preset("cat-frame-0")))
         }
+        let recorder = errorRecorder()
         let sut = CustomRunnerSettings(
             .testDependencies(appStateClient: .testDependency(appState)),
-            selectedCustomRunner: customRunner,
-            customRunnerBundleList: [RunnerBundle(runner: customRunner, frame: .custom(Data()))]
+            customRunnerBundleList: [RunnerBundle(runner: customRunner, frame: .custom(Data()))],
+            action: recorder.action
         )
-        await sut.send(.deleteButtonTapped)
+        await sut.send(.deleteButtonTapped(customRunner))
         #expect(sut.customRunnerBundleList.isEmpty)
-        #expect(sut.selectedCustomRunner == nil)
-        #expect(sut.showingAlert == false)
+        #expect(recorder.lock.withLock(\.self) == nil)
     }
 
     @MainActor @Test
@@ -77,21 +90,22 @@ struct CustomRunnerSettingsTests {
 
     @MainActor @Test
     func send_onDropCollection_appends_valid_png_and_ignores_other_extensions() async {
-        let sut = CustomRunnerSettings(.testDependencies())
+        let recorder = errorRecorder()
+        let sut = CustomRunnerSettings(.testDependencies(), action: recorder.action)
         await sut.send(.onDropCollection([
             URL.fixture(name: "solid_red_30x36"),
             URL(filePath: "/tmp/ignored.json"),
         ]))
         #expect(sut.frameImages.count == 1)
-        #expect(sut.showingAlert == false)
+        #expect(recorder.lock.withLock(\.self) == nil)
     }
 
     @MainActor @Test
-    func send_onDropCollection_shows_alert_when_image_size_is_invalid() async {
-        let sut = CustomRunnerSettings(.testDependencies())
+    func send_onDropCollection_forwards_error_when_image_size_is_invalid() async {
+        let recorder = errorRecorder()
+        let sut = CustomRunnerSettings(.testDependencies(), action: recorder.action)
         await sut.send(.onDropCollection([URL.fixture(name: "solid_red_10x18")]))
-        #expect(sut.error == .customRunner(.invalidFrameImage))
-        #expect(sut.showingAlert == true)
+        #expect(recorder.lock.withLock(\.self) == .customRunner(.invalidFrameImage))
         #expect(sut.frameImages.isEmpty)
     }
 
@@ -117,8 +131,9 @@ struct CustomRunnerSettingsTests {
     }
 
     @MainActor @Test
-    func send_saveButtonTapped_saves_runner_and_appends_to_list() async {
+    func send_addButtonTapped_saves_runner_and_appends_to_list() async {
         let writtenFileNames = AllocatedUnfairLock<[String]>(initialState: [])
+        let recorder = errorRecorder()
         let sut = CustomRunnerSettings(
             .testDependencies(
                 dataClient: testDependency(of: DataClient.self) {
@@ -129,16 +144,17 @@ struct CustomRunnerSettingsTests {
                 }
             ),
             runnerName: "New Runner",
-            frameImages: [FrameImage.dummy()]
+            frameImages: [FrameImage.dummy()],
+            action: recorder.action
         )
-        await sut.send(.saveButtonTapped)
-        #expect(sut.showingAlert == false)
+        await sut.send(.addButtonTapped)
+        #expect(recorder.lock.withLock(\.self) == nil)
         #expect(sut.customRunnerBundleList.map(\.runner.name) == ["New Runner"])
         #expect(writtenFileNames.withLock(\.self) == ["frame-0.png", "CUSTOM_RUNNERS.json"])
     }
 
     @MainActor @Test
-    func send_saveButtonTapped_shows_alert_when_name_already_exists() async {
+    func send_addButtonTapped_forwards_error_when_name_already_exists() async {
         let json = """
             [
               {
@@ -150,6 +166,7 @@ struct CustomRunnerSettingsTests {
               }
             ]
             """
+        let recorder = errorRecorder()
         let sut = CustomRunnerSettings(
             .testDependencies(
                 dataClient: testDependency(of: DataClient.self) {
@@ -160,16 +177,17 @@ struct CustomRunnerSettingsTests {
                 }
             ),
             runnerName: "New Runner",
-            frameImages: [FrameImage.dummy()]
+            frameImages: [FrameImage.dummy()],
+            action: recorder.action
         )
-        await sut.send(.saveButtonTapped)
-        #expect(sut.error == .customRunner(.nameAlreadyExists))
-        #expect(sut.showingAlert == true)
+        await sut.send(.addButtonTapped)
+        #expect(recorder.lock.withLock(\.self) == .customRunner(.nameAlreadyExists))
         #expect(sut.customRunnerBundleList.isEmpty)
     }
 
     @MainActor @Test
-    func send_saveButtonTapped_shows_alert_when_saving_fails() async {
+    func send_addButtonTapped_forwards_error_when_saving_fails() async {
+        let recorder = errorRecorder()
         let sut = CustomRunnerSettings(
             .testDependencies(
                 dataClient: testDependency(of: DataClient.self) {
@@ -177,19 +195,24 @@ struct CustomRunnerSettingsTests {
                 }
             ),
             runnerName: "New Runner",
-            frameImages: [FrameImage.dummy()]
+            frameImages: [FrameImage.dummy()],
+            action: recorder.action
         )
-        await sut.send(.saveButtonTapped)
-        #expect(sut.error == .customRunner(.savingFailed))
-        #expect(sut.showingAlert == true)
+        await sut.send(.addButtonTapped)
+        #expect(recorder.lock.withLock(\.self) == .customRunner(.savingFailed))
         #expect(sut.customRunnerBundleList.isEmpty)
     }
 
     @MainActor @Test
-    func send_saveButtonTapped_without_frames_is_noop() async {
-        let sut = CustomRunnerSettings(.testDependencies(), runnerName: "New Runner")
-        await sut.send(.saveButtonTapped)
-        #expect(sut.showingAlert == false)
+    func send_addButtonTapped_without_frames_is_noop() async {
+        let recorder = errorRecorder()
+        let sut = CustomRunnerSettings(
+            .testDependencies(),
+            runnerName: "New Runner",
+            action: recorder.action
+        )
+        await sut.send(.addButtonTapped)
+        #expect(recorder.lock.withLock(\.self) == nil)
         #expect(sut.customRunnerBundleList.isEmpty)
     }
 }

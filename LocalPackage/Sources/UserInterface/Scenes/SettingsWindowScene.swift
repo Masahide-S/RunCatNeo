@@ -26,6 +26,8 @@ public struct SettingsWindowScene: Scene {
     public var body: some Scene {
         Settings {
             SettingsView()
+                .windowResizeBehavior(.enabled)
         }
+        .windowResizability(.contentSize)
     }
 }

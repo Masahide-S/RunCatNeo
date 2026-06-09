@@ -1,8 +1,8 @@
 /*
- AdjustAlignmentViewModifier.swift
- UserInterface
+ DonationProduct.swift
+ DataSource
 
- Created by Takuto Nakamura on 2026/06/03.
+ Created by Takuto Nakamura on 2026/06/08.
  Copyright 2026 Koyme22 (Takuto Nakamura)
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,21 +18,11 @@
  limitations under the License.
  */
 
-import SwiftUI
+public enum DonationProduct: String, Sendable, CaseIterable {
+    case oneTime = "donation.onetime"
+    case yearly = "donation.subscription.yearly"
 
-private struct AdjustAlignmentViewModifier: ViewModifier {
-    var alignment: Alignment
-
-    func body(content: Content) -> some View {
-        ZStack(alignment: alignment) {
-            Text("dummy", bundle: .module).hidden()
-            content
-        }
-    }
-}
-
-extension View {
-    func adjustAlignment(_ alignment: Alignment) -> some View {
-        modifier(AdjustAlignmentViewModifier(alignment: alignment))
+    public var id: String {
+        "com.kyome.Neo.RunCat.\(rawValue)"
     }
 }

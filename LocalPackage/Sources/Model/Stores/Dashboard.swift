@@ -99,8 +99,7 @@ public final class Dashboard: Composable {
             ])
 
         case .reportIssueButtonTapped:
-            guard let url = URL(string: .gitHubURL)?.appending(path: "issues") else { return }
-            _ = nsWorkspaceClient.open(url)
+            _ = nsWorkspaceClient.open(URL.githubIssues)
 
         case .quitButtonTapped:
             nsAppClient.terminate(nil)

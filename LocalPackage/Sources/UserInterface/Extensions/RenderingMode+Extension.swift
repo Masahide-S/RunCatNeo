@@ -1,8 +1,8 @@
 /*
- Bundle+Extension.swift
- Model
+ RenderingMode+Extension.swift
+ UserInterface
 
- Created by Takuto Nakamura on 2026/05/05.
+ Created by Takuto Nakamura on 2026/06/09.
  Copyright 2026 Koyme22 (Takuto Nakamura)
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,17 +18,16 @@
  limitations under the License.
  */
 
-import Foundation
+import DataSource
 
-extension Bundle {
-    private func bundleString(key: String) -> String {
-        guard let string = object(forInfoDictionaryKey: key) as? String else {
-            fatalError("\(key) is not found.")
+extension RenderingMode {
+    public var label: String {
+        let localizationValue: String.LocalizationValue = switch self {
+        case .monochrome:
+            "monochrome"
+        case .color:
+            "color"
         }
-        return string
+        return String(localized: localizationValue, bundle: .module)
     }
-
-    var bundleDisplayName: String { bundleString(key: "CFBundleDisplayName") }
-    var bundleVersion: String { bundleString(key: "CFBundleVersion") }
-    var subscriptionGroupID: String { bundleString(key: "SUBSCRIPTION_GROUP_ID") }
 }

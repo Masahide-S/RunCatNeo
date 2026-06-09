@@ -49,7 +49,7 @@ public final class MetricsBarSettings: Composable {
             logService.notice(.screenView(name: screenName))
             metricsBarConfiguration = userDefaultsRepository.metricsBarConfiguration
 
-        case let .showsSystemInfoToggleSwitched(type, isOn):
+        case let .showsSystemMetricsToggleSwitched(type, isOn):
             func overwrite(isOn: Bool, monitors: inout Bool) -> Bool {
                 if isOn, !monitors {
                     monitors = true
@@ -80,13 +80,13 @@ public final class MetricsBarSettings: Composable {
             userDefaultsRepository.systemMetricsConfiguration = configuration
             systemMetricsService.emitConfigurationChange()
             if needsToggleActivation {
-                systemMetricsService.toggleSystemInfoActivation(type: type, isOn: isOn)
+                systemMetricsService.toggleSystemMetricsActivation(type: type, isOn: isOn)
             }
         }
     }
 
     public enum Action: Sendable {
         case task(String)
-        case showsSystemInfoToggleSwitched(SystemInfoType, Bool)
+        case showsSystemMetricsToggleSwitched(SystemInfoType, Bool)
     }
 }

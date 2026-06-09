@@ -21,7 +21,7 @@
       "localizations" : [
         {
           "description" : "A tasty cup for development",
-          "displayName" : "A Cup of Cocoa",
+          "displayName" : "A Cup of Hot Cocoa",
           "locale" : "en_US"
         },
         {
@@ -117,13 +117,13 @@
           ],
           "localizations" : [
             {
-              "description" : "Cocoa for daily development",
-              "displayName" : "Cocoa Powder",
+              "description" : "Hot cocoa for daily development",
+              "displayName" : "Hot Cocoa Powder",
               "locale" : "en_US"
             },
             {
               "description" : "日々の開発のためのココア",
-              "displayName" : "カカオ豆",
+              "displayName" : "ココアの粉",
               "locale" : "ja"
             }
           ],

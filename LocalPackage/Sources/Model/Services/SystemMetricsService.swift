@@ -49,11 +49,10 @@ struct SystemMetricsService {
             SystemInfoType.battery: configuration.monitorsBattery,
             SystemInfoType.network: configuration.monitorsNetwork,
         ])
-        let monitorInterval = appStateClient.withLock(\.monitorInterval)
-        systemInfoObserverClient.startMonitoring(Double(monitorInterval))
+        systemInfoObserverClient.startMonitoring(Double(userDefaultsRepository.updateInterval.seconds))
     }
 
-    func toggleSystemInfoActivation(type: SystemInfoType, isOn: Bool) {
+    func toggleSystemMetricsActivation(type: SystemInfoType, isOn: Bool) {
         systemInfoObserverClient.toggleActivation([type: isOn])
     }
 

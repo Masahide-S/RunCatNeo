@@ -37,15 +37,15 @@ struct SettingsView: View {
                     }
                 }
                 .tag(SettingsTab.general)
-            CustomRunnerSettingsView(store: .init(appDependencies))
+            RunnerSettingsView(store: .init(appDependencies))
                 .tabItem {
                     Label {
-                        Text("customRunnersTab", bundle: .module)
+                        Text("runnerTab", bundle: .module)
                     } icon: {
-                        Image(.runcatBadgePlus)
+                        Image(.runcat)
                     }
                 }
-                .tag(SettingsTab.customRunners)
+                .tag(SettingsTab.runner)
             MetricsSettingsView(store: .init(appDependencies))
                 .tabItem {
                     Label {
@@ -65,6 +65,8 @@ struct SettingsView: View {
                 }
                 .tag(SettingsTab.donation)
         }
+        .frame(minHeight: 280, maxHeight: .infinity)
+        .fixedSize(horizontal: true, vertical: false)
         .accessibilityIdentifier("settings")
     }
 }

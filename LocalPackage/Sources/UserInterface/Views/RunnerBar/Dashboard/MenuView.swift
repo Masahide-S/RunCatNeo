@@ -33,7 +33,7 @@ struct MenuView: View {
         ossParagraph.foregroundColor = NSColor.textColor
         attributedString.append(ossParagraph)
 
-        let url = URL(string: .gitHubURL)!
+        let url = URL.github
         var urlParagraph = AttributedString(url.absoluteString)
         urlParagraph.foregroundColor = NSColor(resource: .url)
         urlParagraph.link = url

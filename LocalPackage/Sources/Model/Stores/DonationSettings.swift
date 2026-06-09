@@ -20,18 +20,37 @@
 
 import DataSource
 import Observation
+import StoreKit
+import SwiftUI
 
 @MainActor @Observable
 public final class DonationSettings: Composable {
+    private let nsWorkspaceClient: NSWorkspaceClient
     private let logService: LogService
 
+    public var subscriptionGroupID: String
+    public var isSubscribed: Bool
+    public var didCompleteOneTimeDonation: Bool
+    public var showingAlert: Bool
+    public var error: StoreKitError?
     public let action: (Action) async -> Void
 
     public init(
         _ appDependencies: AppDependencies,
+        subscriptionGroupID: String? = nil,
+        isSubscribed: Bool = false,
+        didCompleteOneTimeDonation: Bool = false,
+        showingAlert: Bool = false,
+        error: StoreKitError? = nil,
         action: @escaping (Action) async -> Void = { _ in }
     ) {
+        self.nsWorkspaceClient = appDependencies.nsWorkspaceClient
         self.logService = .init(appDependencies)
+        self.subscriptionGroupID = subscriptionGroupID ?? appDependencies.appStateClient.withLock(\.subscriptionGroupID)
+        self.isSubscribed = isSubscribed
+        self.didCompleteOneTimeDonation = didCompleteOneTimeDonation
+        self.showingAlert = showingAlert
+        self.error = error
         self.action = action
     }
 
@@ -40,13 +59,41 @@ public final class DonationSettings: Composable {
         case let .task(screenName):
             logService.notice(.screenView(name: screenName))
 
-        case let .donationFailed(error):
+        case let .linkButtonTapped(url):
+            _ = nsWorkspaceClient.open(url)
+
+        case .restoreSubscriptionButtonTapped:
+            do {
+                try await AppStore.sync()
+            } catch {
+                handle(error)
+            }
+
+        case let .onReceiveProductTaskState(taskState):
+            if case let .failure(error) = taskState {
+                handle(error)
+            }
+        }
+    }
+
+    private func handle(_ error: any Error) {
+        if let error = error as? StoreKitError {
+            switch error {
+            case .userCancelled:
+                return
+            default:
+                self.error = error
+                showingAlert = true
+            }
+        } else {
             logService.error(.donationFailed(error))
         }
     }
 
     public enum Action: Sendable {
         case task(String)
-        case donationFailed(any Error)
+        case linkButtonTapped(URL)
+        case restoreSubscriptionButtonTapped
+        case onReceiveProductTaskState(Product.CollectionTaskState)
     }
 }

@@ -20,7 +20,7 @@
 
 public enum SettingsTab {
     case general
-    case customRunners
+    case runner
     case metrics
     case donation
 }

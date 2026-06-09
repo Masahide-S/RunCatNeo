@@ -25,7 +25,7 @@ struct RunnerPreviewView: View {
     @Bindable var store: CustomRunnerSettings
 
     var body: some View {
-        HStack(alignment: .center, spacing: 8) {
+        HStack(alignment: .center, spacing: 16) {
             Group {
                 if let frameImage = store.previewingFrameImage {
                     Image(frameImage.cgImage, scale: 1.0, label: Text("preview", bundle: .module))
@@ -48,6 +48,5 @@ struct RunnerPreviewView: View {
             }
             .labelsHidden()
         }
-        .adjustAlignment(.topLeading)
     }
 }

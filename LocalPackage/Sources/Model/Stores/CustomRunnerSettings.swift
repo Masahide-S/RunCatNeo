@@ -33,8 +33,8 @@ public final class CustomRunnerSettings: Composable {
     @ObservationIgnored private var task: Task<Void, Never>?
     @ObservationIgnored private var index = Int.zero
 
-    public var selectedCustomRunner: Runner?
     public var customRunnerBundleList: [RunnerBundle]
+    public var showingCustomRunnerEditorSheet: Bool
     public var runnerName: String
     public var isTemplate: Bool
     public var frameImages: [FrameImage]
@@ -42,35 +42,33 @@ public final class CustomRunnerSettings: Composable {
     public var previewingFrameImage: FrameImage?
     public var previewSpeed: Double
     public var showingFileImporter: Bool
-    public var showingAlert: Bool
-    public var error: RCNError?
+    public var showingHelpPopover: Bool
     public let action: (Action) async -> Void
 
-    public var canSave: Bool {
+    public var canAdd: Bool {
         !runnerName.isEmpty && !frameImages.isEmpty
     }
 
     public init(
         _ appDependencies: AppDependencies,
-        selectedCustomRunner: Runner? = nil,
         customRunnerBundleList: [RunnerBundle] = [],
+        showingCustomRunnerEditorSheet: Bool = false,
         runnerName: String = "",
         isTemplate: Bool = true,
         frameImages: [FrameImage] = [],
         selectingFrameImage: FrameImage? = nil,
         previewingFrameImage: FrameImage? = nil,
-        previewSpeed: Double = .zero,
+        previewSpeed: Double = 1,
         showingFileImporter: Bool = false,
-        showingAlert: Bool = false,
-        error: RCNError? = nil,
+        showingHelpPopover: Bool = false,
         action: @escaping (Action) async -> Void =  { _ in }
     ) {
         self.appStateClient = appDependencies.appStateClient
         self.uuidClient = appDependencies.uuidClient
         self.logService = .init(appDependencies)
         self.runnerService = .init(appDependencies)
-        self.selectedCustomRunner = selectedCustomRunner
         self.customRunnerBundleList = customRunnerBundleList
+        self.showingCustomRunnerEditorSheet = showingCustomRunnerEditorSheet
         self.runnerName = runnerName
         self.isTemplate = isTemplate
         self.frameImages = frameImages
@@ -78,15 +76,13 @@ public final class CustomRunnerSettings: Composable {
         self.previewingFrameImage = previewingFrameImage
         self.previewSpeed = previewSpeed
         self.showingFileImporter = showingFileImporter
-        self.showingAlert = showingAlert
-        self.error = error
+        self.showingHelpPopover = showingHelpPopover
         self.action = action
     }
 
     public func reduce(_ action: Action) async {
         switch action {
-        case let .task(screenName):
-            logService.notice(.screenView(name: screenName))
+        case .task:
             customRunnerBundleList = appStateClient.withLock(\.runnerBundleLists.latestValue)?
                 .filter(\.runner.isCustom) ?? []
             task?.cancel()
@@ -97,14 +93,27 @@ public final class CustomRunnerSettings: Composable {
                     try? await Task.sleep(for: .seconds(0.2 - 0.05 * previewSpeed))
                 }
             }
-
+            
         case .onDisappear:
             task?.cancel()
             task = nil
+            
+        case .addCustomRunnerButtonTapped:
+            showingCustomRunnerEditorSheet = true
+            
+        case .cancelButtonTapped:
+            showingCustomRunnerEditorSheet = false
+            
+        case .onDissmissSheet:
+            runnerName = ""
+            isTemplate = true
+            frameImages.removeAll()
+            selectingFrameImage = nil
+            previewingFrameImage = nil
+            previewSpeed = 1
 
-        case .deleteButtonTapped:
-            guard let runner = selectedCustomRunner,
-                  let currentRunner = appStateClient.withLock(\.runnerBundles.latestValue)?.runner else {
+        case let .deleteButtonTapped(runner):
+            guard let currentRunner = appStateClient.withLock(\.runnerBundles.latestValue)?.runner else {
                 return
             }
             do {
@@ -112,24 +121,25 @@ public final class CustomRunnerSettings: Composable {
                     throw RCNError.customRunner(.runnerInUse)
                 }
                 customRunnerBundleList.removeAll { $0.runner == runner }
-                selectedCustomRunner = nil
                 try runnerService.delete(customRunner: runner)
             } catch let error as RCNError {
-                self.error = error
-                showingAlert = true
+                await send(.onError(error))
             } catch {
                 logService.critical(.deletingCustomRunnerFailed(error))
             }
 
+        case let .selectRenderingMode(renderingMode):
+            isTemplate = renderingMode.isTemplate
+
         case let .onDragFrameImageCell(frameImage):
             selectingFrameImage = frameImage
-
+            
         case let .onTapFrameImageCell(frameImage):
             selectingFrameImage = frameImage
-
+            
         case .onTapCollectionBackground:
             selectingFrameImage = nil
-
+            
         case let .onDropCollection(urls):
             do {
                 try urls.forEach { url in
@@ -138,15 +148,14 @@ public final class CustomRunnerSettings: Composable {
                     }
                 }
             } catch let error as RCNError {
-                self.error = error
-                showingAlert = true
+                await send(.onError(error))
             } catch {
                 logService.error(.importingFrameImagesFailed(error))
             }
-
+            
         case .addFrameButtonTapped:
             showingFileImporter = true
-
+            
         case .deleteFrameButtonTapped:
             guard let frameImage = selectingFrameImage,
                   let index = frameImages.firstIndex(of: frameImage) else {
@@ -159,8 +168,29 @@ public final class CustomRunnerSettings: Composable {
                 frameImages.last
             }
             advanceFrameImage()
-
-        case .saveButtonTapped:
+            
+        case .helpButtonTapped:
+            showingHelpPopover = true
+            
+        case let .onCompletionFileImporter(.success(urls)):
+            do {
+                for url in urls {
+                    guard url.startAccessingSecurityScopedResource() else { return }
+                    defer {
+                        url.stopAccessingSecurityScopedResource()
+                    }
+                    try appendFrameImage(from: url)
+                }
+            } catch let error as RCNError {
+                await send(.onError(error))
+            } catch {
+                logService.error(.importingFrameImagesFailed(error))
+            }
+            
+        case let .onCompletionFileImporter(.failure(error)):
+            logService.error(.importingFrameImagesFailed(error))
+            
+        case .addButtonTapped:
             guard let frameImage = frameImages.first else { return }
             do {
                 guard runnerService.validate(customRunnerName: runnerName) else {
@@ -180,31 +210,15 @@ public final class CustomRunnerSettings: Composable {
                     logService.critical(.savingCustomRunnerFailed(error))
                     throw RCNError.customRunner(.savingFailed)
                 }
+                showingCustomRunnerEditorSheet = false
             } catch let error as RCNError {
-                self.error = error
-                showingAlert = true
+                await send(.onError(error))
             } catch {
                 logService.critical(.unknown(error))
             }
-
-        case let .onCompletionFileImporter(.success(urls)):
-            do {
-                for url in urls {
-                    guard url.startAccessingSecurityScopedResource() else { return }
-                    defer {
-                        url.stopAccessingSecurityScopedResource()
-                    }
-                    try appendFrameImage(from: url)
-                }
-            } catch let error as RCNError {
-                self.error = error
-                showingAlert = true
-            } catch {
-                logService.error(.importingFrameImagesFailed(error))
-            }
-
-        case let .onCompletionFileImporter(.failure(error)):
-            logService.error(.importingFrameImagesFailed(error))
+            
+        case .onError:
+            return
         }
     }
 
@@ -231,16 +245,22 @@ public final class CustomRunnerSettings: Composable {
     }
 
     public enum Action: Sendable {
-        case task(String)
+        case task
         case onDisappear
-        case deleteButtonTapped
+        case deleteButtonTapped(Runner)
+        case addCustomRunnerButtonTapped
+        case cancelButtonTapped
+        case onDissmissSheet
+        case selectRenderingMode(RenderingMode)
         case onDragFrameImageCell(FrameImage)
         case onTapFrameImageCell(FrameImage)
         case onTapCollectionBackground
         case onDropCollection([URL])
         case addFrameButtonTapped
         case deleteFrameButtonTapped
-        case saveButtonTapped
+        case helpButtonTapped
         case onCompletionFileImporter(Result<[URL], any Error>)
+        case addButtonTapped
+        case onError(RCNError)
     }
 }

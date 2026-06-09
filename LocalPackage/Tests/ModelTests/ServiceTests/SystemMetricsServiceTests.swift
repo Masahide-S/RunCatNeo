@@ -56,6 +56,7 @@ struct SystemMetricsServiceTests {
                 }
             },
             userDefaultsClient: testDependency(of: UserDefaultsClient.self) {
+                $0.integer = { _ in 3 }
                 $0.data = { _ in configurationData }
             }
         ))
@@ -67,7 +68,7 @@ struct SystemMetricsServiceTests {
             .battery: true,
             .network: false,
         ])
-        #expect(monitorInterval.withLock(\.self) == 5.0)
+        #expect(monitorInterval.withLock(\.self) == 3.0)
     }
 
     @Test
@@ -91,7 +92,7 @@ struct SystemMetricsServiceTests {
     }
 
     @Test
-    func toggleSystemInfoActivation_passes_single_request_to_observer() {
+    func toggleSystemMetricsActivation_passes_single_request_to_observer() {
         let activationRequests = AllocatedUnfairLock<[SystemInfoType: Bool]?>(initialState: nil)
         let sut = SystemMetricsService(.testDependencies(
             systemInfoObserverClient: testDependency(of: SystemInfoObserverClient.self) {
@@ -100,7 +101,7 @@ struct SystemMetricsServiceTests {
                 }
             }
         ))
-        sut.toggleSystemInfoActivation(type: .network, isOn: false)
+        sut.toggleSystemMetricsActivation(type: .network, isOn: false)
         #expect(activationRequests.withLock(\.self) == [.network: false])
     }
 

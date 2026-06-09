@@ -28,47 +28,6 @@ struct GeneralSettingsView: View {
     var body: some View {
         Form {
             Section {
-                Picker(selection: Binding<Runner?>(
-                    get: { store.currentRunner },
-                    asyncSet: { await store.send(.selectRunner($0)) }
-                )) {
-                    ForEach(store.runnerBundleList, id: \.runner) { runnerBundle in
-                        Label {
-                            Text(runnerBundle.runner.name)
-                        } icon: {
-                            runnerBundle.thumbnail
-                        }
-                        .tag(runnerBundle.runner)
-                    }
-                } label: {
-                    Text("runner", bundle: .module)
-                }
-                Toggle(isOn: Binding<Bool>(
-                    get: { store.speedDecreasesUnderLoad },
-                    asyncSet: { await store.send(.slowDownUnderLoadToggleSwitched($0)) }
-                )) {
-                    Text("slowDownUnderLoad", bundle: .module)
-                }
-                Toggle(isOn: Binding<Bool>(
-                    get: { store.isFlippedHorizontally },
-                    asyncSet: { await store.send(.flipHorizontallyToggleSwitched($0)) }
-                )) {
-                    Text("flipHorizontally", bundle: .module)
-                }
-            } header: {
-                Text("runnerBar", bundle: .module)
-            }
-            Section {
-                Toggle(isOn: Binding<Bool>(
-                    get: { store.showsMetricsBar },
-                    asyncSet: { await store.send(.showMetricsBarToggleSwitched($0)) }
-                )) {
-                    Text("showMetricsBar", bundle: .module)
-                }
-            } header: {
-                Text("metricsBar", bundle: .module)
-            }
-            Section {
                 Toggle(isOn: Binding<Bool>(
                     get: { store.launchesAtLogin },
                     asyncSet: { await store.send(.launchAtLoginToggleSwitched($0)) }
@@ -78,22 +37,25 @@ struct GeneralSettingsView: View {
             } header: {
                 Text("launch", bundle: .module)
             }
+            Section {
+                Picker(selection: Binding<UpdateInterval>(
+                    get: { store.updateInterval },
+                    asyncSet: { await store.send(.updateIntervalChanged($0)) }
+                )) {
+                    ForEach(UpdateInterval.allCases) { interval in
+                        Text("\(interval.seconds)seconds", bundle: .module)
+                            .tag(interval)
+                    }
+                } label: {
+                    Text("updateInterval", bundle: .module)
+                }
+            } header: {
+                Text("monitoring", bundle: .module)
+            }
         }
         .formStyle(.grouped)
-        .fixedSize()
-        .alert(
-            isPresented: $store.showingAlert,
-            error: store.error,
-            actions: { _ in },
-            message: { _ in }
-        )
         .task {
             await store.send(.task(String(describing: Self.self)))
-        }
-        .onDisappear {
-            Task {
-                await store.send(.onDisappear)
-            }
         }
     }
 }

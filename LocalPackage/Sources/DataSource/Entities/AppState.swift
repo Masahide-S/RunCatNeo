@@ -23,8 +23,8 @@ import Foundation
 public struct AppState: Sendable {
     public var name: String
     public var version: String
+    public var subscriptionGroupID: String
     public var hasAlreadyBootstrap: Bool
-    public let monitorInterval: Int
     public var metrics = AsyncStreamBundle<Metrics>()
     public var systemMetricsConfigurationChanges = AsyncStreamBundle<Void>()
     public var customMetricsReconcileObserver: Task<Void, Never>?
@@ -37,12 +37,12 @@ public struct AppState: Sendable {
     init(
         name: String = "",
         version: String = "",
-        hasAlreadyBootstrap: Bool = false,
-        monitorInterval: Int = 5
+        subscriptionGroupID: String = "",
+        hasAlreadyBootstrap: Bool = false
     ) {
         self.name = name
         self.version = version
+        self.subscriptionGroupID = subscriptionGroupID
         self.hasAlreadyBootstrap = hasAlreadyBootstrap
-        self.monitorInterval = monitorInterval
     }
 }

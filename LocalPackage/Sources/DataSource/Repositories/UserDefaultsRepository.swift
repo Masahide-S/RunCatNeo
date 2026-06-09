@@ -38,6 +38,11 @@ public struct UserDefaultsRepository: Sendable {
         nonmutating set { userDefaultsClient.set(newValue, .isFlippedHorizontally) }
     }
 
+    public var updateInterval: UpdateInterval {
+        get { UpdateInterval(rawValue: userDefaultsClient.integer(.updateInterval)) ?? .default }
+        nonmutating set { userDefaultsClient.set(newValue.rawValue, .updateInterval) }
+    }
+
     public var systemMetricsConfiguration: SystemMetricsConfiguration {
         get {
             guard let data = userDefaultsClient.data(.systemMetricsConfiguration),
@@ -103,6 +108,7 @@ public struct UserDefaultsRepository: Sendable {
             .runnerID: RunnerKind.cat.id,
             .speedDecreasesUnderLoad: false,
             .isFlippedHorizontally: false,
+            .updateInterval: UpdateInterval.default.rawValue,
         ])
         if ProcessInfo.needsShowAllData {
             showAllData()

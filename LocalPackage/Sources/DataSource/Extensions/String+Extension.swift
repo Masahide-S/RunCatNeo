@@ -26,9 +26,9 @@ extension String {
     static let runnerID = "RUNNER_ID"
     static let speedDecreasesUnderLoad = "SPEED_DECREASES_UNDER_LOAD"
     static let systemMetricsConfiguration = "SYSTEM_METRICS_CONFIGURATION"
+    static let updateInterval = "UPDATE_INTERVAL"
 
     public static let activityMonitor = "com.apple.ActivityMonitor"
     public static let finder = "com.apple.finder"
-    public static let gitHubURL = "https://github.com/runcat-dev/RunCatNeo"
     public static let showsMetricsBar = "SHOWS_METRICS_BAR"
 }

@@ -17,12 +17,17 @@ struct DonationSettingsTests {
     }
 
     @MainActor @Test
-    func send_donationFailed_completes_and_forwards_action() async {
-        let receivedActionCount = AllocatedUnfairLock<Int>(initialState: 0)
-        let sut = DonationSettings(.testDependencies()) { _ in
-            receivedActionCount.withLock { $0 += 1 }
+    func send_linkButtonTapped_opens_url() async {
+        let openedURL = AllocatedUnfairLock<URL?>(initialState: nil)
+        let nsWorkspaceClient = testDependency(of: NSWorkspaceClient.self) {
+            $0.open = { url in
+                openedURL.withLock { $0 = url }
+                return true
+            }
         }
-        await sut.send(.donationFailed(CocoaError(.fileReadUnknown)))
-        #expect(receivedActionCount.withLock(\.self) == 1)
+        let sut = DonationSettings(.testDependencies(nsWorkspaceClient: nsWorkspaceClient))
+        let url = URL(string: "https://example.com/donate")!
+        await sut.send(.linkButtonTapped(url))
+        #expect(openedURL.withLock(\.self) == url)
     }
 }

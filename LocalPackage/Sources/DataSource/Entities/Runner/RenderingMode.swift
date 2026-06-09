@@ -1,8 +1,8 @@
 /*
- Donation.swift
+ RenderingMode.swift
  DataSource
 
- Created by Takuto Nakamura on 2026/06/08.
+ Created by Takuto Nakamura on 2026/06/09.
  Copyright 2026 Koyme22 (Takuto Nakamura)
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,13 +18,24 @@
  limitations under the License.
  */
 
-public enum Donation {
-    public static let groupID = "22140755"
+import Foundation
 
-    public enum Product: String, CaseIterable, Sendable {
-        case onetime = "com.kyome.Neo.RunCat.donation.onetime"
-        case yearly = "com.kyome.Neo.RunCat.donation.subscription.yearly"
+public enum RenderingMode: Hashable, Sendable, Identifiable, CaseIterable {
+    case monochrome
+    case color
 
-        public var id: String { rawValue }
+    public var id: Self { self }
+
+    public init(isTemplate: Bool) {
+        self = isTemplate ? .monochrome : .color
+    }
+
+    public var isTemplate: Bool {
+        switch self {
+        case .monochrome:
+            true
+        case .color:
+            false
+        }
     }
 }

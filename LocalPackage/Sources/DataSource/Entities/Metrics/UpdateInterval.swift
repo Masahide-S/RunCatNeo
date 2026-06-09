@@ -1,8 +1,8 @@
 /*
- Bundle+Extension.swift
- Model
+ UpdateInterval.swift
+ DataSource
 
- Created by Takuto Nakamura on 2026/05/05.
+ Created by Takuto Nakamura on 2026/06/08.
  Copyright 2026 Koyme22 (Takuto Nakamura)
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,17 +18,14 @@
  limitations under the License.
  */
 
-import Foundation
+public enum UpdateInterval: Int, Sendable, Identifiable, CaseIterable {
+    case threeSeconds = 3
+    case fiveSeconds = 5
+    case tenSeconds = 10
 
-extension Bundle {
-    private func bundleString(key: String) -> String {
-        guard let string = object(forInfoDictionaryKey: key) as? String else {
-            fatalError("\(key) is not found.")
-        }
-        return string
-    }
+    public var id: Int { rawValue }
 
-    var bundleDisplayName: String { bundleString(key: "CFBundleDisplayName") }
-    var bundleVersion: String { bundleString(key: "CFBundleVersion") }
-    var subscriptionGroupID: String { bundleString(key: "SUBSCRIPTION_GROUP_ID") }
+    public var seconds: Int { rawValue }
+
+    public static let `default` = UpdateInterval.fiveSeconds
 }
