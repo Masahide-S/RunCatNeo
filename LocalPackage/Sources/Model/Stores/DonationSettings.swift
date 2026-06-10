@@ -25,7 +25,6 @@ import SwiftUI
 
 @MainActor @Observable
 public final class DonationSettings: Composable {
-    private let nsWorkspaceClient: NSWorkspaceClient
     private let logService: LogService
 
     public var subscriptionGroupID: String
@@ -44,7 +43,6 @@ public final class DonationSettings: Composable {
         error: StoreKitError? = nil,
         action: @escaping (Action) async -> Void = { _ in }
     ) {
-        self.nsWorkspaceClient = appDependencies.nsWorkspaceClient
         self.logService = .init(appDependencies)
         self.subscriptionGroupID = subscriptionGroupID ?? appDependencies.appStateClient.withLock(\.subscriptionGroupID)
         self.isSubscribed = isSubscribed
@@ -58,9 +56,6 @@ public final class DonationSettings: Composable {
         switch action {
         case let .task(screenName):
             logService.notice(.screenView(name: screenName))
-
-        case let .linkButtonTapped(url):
-            _ = nsWorkspaceClient.open(url)
 
         case .restoreSubscriptionButtonTapped:
             do {
@@ -92,7 +87,6 @@ public final class DonationSettings: Composable {
 
     public enum Action: Sendable {
         case task(String)
-        case linkButtonTapped(URL)
         case restoreSubscriptionButtonTapped
         case onReceiveProductTaskState(Product.CollectionTaskState)
     }

@@ -72,23 +72,27 @@ struct DonationSettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
-                    VStack(alignment: .trailing, spacing: 4) {
+                    VStack(alignment: .trailing, spacing: 2) {
                         if store.isSubscribed {
-                            TintedButton(labelKey: "manageSubscription") {
-                                await store.send(.linkButtonTapped(URL.manageSubscriptions))
+                            Link(destination: URL.manageSubscriptions) {
+                                Text("manageSubscription", bundle: .module)
                             }
                         } else {
-                            TintedButton(labelKey: "restoreSubscription") {
-                                await store.send(.restoreSubscriptionButtonTapped)
+                            Button {
+                                Task { await store.send(.restoreSubscriptionButtonTapped) }
+                            } label: {
+                                Text("restoreSubscription", bundle: .module)
                             }
+                            .buttonStyle(.link)
                         }
-                        TintedButton(labelKey: "termsOfService") {
-                            await store.send(.linkButtonTapped(URL.termsOfService))
+                        Link(destination: URL.termsOfService) {
+                            Text("termsOfService", bundle: .module)
                         }
-                        TintedButton(labelKey: "privacyPolicy") {
-                            await store.send(.linkButtonTapped(URL.privacyPolicy))
+                        Link(destination: URL.privacyPolicy) {
+                            Text("privacyPolicy", bundle: .module)
                         }
                     }
+                    .textScale(.secondary)
                 }
             }
         }
@@ -110,20 +114,3 @@ struct DonationSettingsView: View {
 
 extension DonationSettings: ObservableObject {}
 
-private struct TintedButton: View {
-    var labelKey: LocalizedStringKey
-    var action: () async -> Void
-
-    var body: some View {
-        Button {
-            Task {
-                await action()
-            }
-        } label: {
-            Text(labelKey, bundle: .module)
-        }
-        .buttonStyle(.borderless)
-        .textScale(.secondary)
-        .tint(Color.accentColor)
-    }
-}

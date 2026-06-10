@@ -1,5 +1,4 @@
 import AllocatedUnfairLock
-import Foundation
 import Testing
 
 @testable import DataSource
@@ -16,18 +15,4 @@ struct DonationSettingsTests {
         #expect(receivedActionCount.withLock(\.self) == 1)
     }
 
-    @MainActor @Test
-    func send_linkButtonTapped_opens_url() async {
-        let openedURL = AllocatedUnfairLock<URL?>(initialState: nil)
-        let nsWorkspaceClient = testDependency(of: NSWorkspaceClient.self) {
-            $0.open = { url in
-                openedURL.withLock { $0 = url }
-                return true
-            }
-        }
-        let sut = DonationSettings(.testDependencies(nsWorkspaceClient: nsWorkspaceClient))
-        let url = URL(string: "https://example.com/donate")!
-        await sut.send(.linkButtonTapped(url))
-        #expect(openedURL.withLock(\.self) == url)
-    }
 }
