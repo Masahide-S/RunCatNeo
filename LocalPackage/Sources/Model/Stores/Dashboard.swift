@@ -92,6 +92,10 @@ public final class Dashboard: Composable {
             guard let url = nsWorkspaceClient.urlForApplication(.activityMonitor) else { return }
             nsWorkspaceClient.openApplication(url, .init())
 
+        case let .openSourceLicenseButtonTapped(openWindow):
+            nsAppClient.activate(true)
+            openWindow(id: .openSourceLicense, value: Int.zero)
+
         case let .aboutButtonTapped(body):
             nsAppClient.activate(true)
             nsAppClient.orderFrontStandardAboutPanel([
@@ -125,6 +129,7 @@ public final class Dashboard: Composable {
         case settingsButtonTapped
         case activityMonitorButtonTapped
         case aboutButtonTapped(AttributedString)
+        case openSourceLicenseButtonTapped(OpenWindowActionWrapper)
         case reportIssueButtonTapped
         case quitButtonTapped
         case debugSleepButtonTapped

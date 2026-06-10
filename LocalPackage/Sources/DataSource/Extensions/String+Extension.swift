@@ -30,5 +30,6 @@ extension String {
 
     public static let activityMonitor = "com.apple.ActivityMonitor"
     public static let finder = "com.apple.finder"
+    public static let openSourceLicense = "OPEN_SOURCE_LICENSE"
     public static let showsMetricsBar = "SHOWS_METRICS_BAR"
 }

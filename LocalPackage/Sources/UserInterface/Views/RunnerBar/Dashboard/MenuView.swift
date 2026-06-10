@@ -23,6 +23,7 @@ import Model
 import SwiftUI
 
 struct MenuView: View {
+    @Environment(\.openWindow) private var openWindow
     var appName: String
     var buttonTapped: (Dashboard.Action) async -> Void
 
@@ -75,6 +76,19 @@ struct MenuView: View {
                     Text("about\(appName)", bundle: .module)
                 } icon: {
                     Image(systemName: "info.circle")
+                }
+            }
+            Button {
+                Task {
+                    await buttonTapped(.openSourceLicenseButtonTapped(.init(action: {
+                        openWindow(id: $0, value: $1)
+                    })))
+                }
+            } label: {
+                Label {
+                    Text("openSourceLicense", bundle: .module)
+                } icon: {
+                    Image(systemName: "building.columns")
                 }
             }
             Button {

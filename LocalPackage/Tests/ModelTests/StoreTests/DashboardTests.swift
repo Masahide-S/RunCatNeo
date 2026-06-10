@@ -67,6 +67,26 @@ struct DashboardTests {
     }
 
     @MainActor @Test
+    func send_openSourceLicenseButtonTapped() async {
+        let callStack = AllocatedUnfairLock<[String]>(initialState: [])
+        let sut = Dashboard(.testDependencies(
+            nsAppClient: testDependency(of: NSAppClient.self) {
+                $0.activate = { value in
+                    callStack.withLock { $0.append("activate: \(value)") }
+                }
+            }
+        ))
+        let openWindow = OpenWindowActionWrapper { id, value in
+            callStack.withLock { $0.append("openWindow: \(id), \(value)") }
+        }
+        await sut.send(.openSourceLicenseButtonTapped(openWindow))
+        #expect(callStack.withLock(\.self) == [
+            "activate: true",
+            "openWindow: OPEN_SOURCE_LICENSE, 0",
+        ])
+    }
+
+    @MainActor @Test
     func send_aboutButtonTapped() async {
         let callStack = AllocatedUnfairLock<[String]>(initialState: [])
         let sut = Dashboard(.testDependencies(
