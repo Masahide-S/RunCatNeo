@@ -29,6 +29,7 @@ struct DashboardView: View {
         VStack(spacing: 8) {
             HStack {
                 Text(store.appName)
+                    .foregroundStyle(.secondary)
                     .padding(.leading, 8)
                 Spacer()
                 MenuView(appName: store.appName) { action in
