@@ -28,8 +28,8 @@ public final class DonationSettings: Composable {
     private let logService: LogService
 
     public var subscriptionGroupID: String
+    public var isPurchased: Bool
     public var isSubscribed: Bool
-    public var didCompleteOneTimeDonation: Bool
     public var showingAlert: Bool
     public var error: StoreKitError?
     public let action: (Action) async -> Void
@@ -37,16 +37,16 @@ public final class DonationSettings: Composable {
     public init(
         _ appDependencies: AppDependencies,
         subscriptionGroupID: String? = nil,
+        isPurchased: Bool = false,
         isSubscribed: Bool = false,
-        didCompleteOneTimeDonation: Bool = false,
         showingAlert: Bool = false,
         error: StoreKitError? = nil,
         action: @escaping (Action) async -> Void = { _ in }
     ) {
         self.logService = .init(appDependencies)
         self.subscriptionGroupID = subscriptionGroupID ?? appDependencies.appStateClient.withLock(\.subscriptionGroupID)
+        self.isPurchased = isPurchased
         self.isSubscribed = isSubscribed
-        self.didCompleteOneTimeDonation = didCompleteOneTimeDonation
         self.showingAlert = showingAlert
         self.error = error
         self.action = action
@@ -67,6 +67,31 @@ public final class DonationSettings: Composable {
         case let .onReceiveProductTaskState(taskState):
             if case let .failure(error) = taskState {
                 handle(error)
+            }
+
+        case let .onPurchaseCompleted(product, result):
+            switch result {
+            case let .success(.success(verificationResult)):
+                do {
+                    let transaction = try verificationResult.payloadValue
+                    if product.id == DonationProduct.oneTime.id {
+                        isPurchased = true
+                    }
+                    await transaction.finish()
+                } catch {
+                    handle(error)
+                }
+            case .success:
+                return
+            case let .failure(error):
+                handle(error)
+            }
+
+        case let .onReceiveSubscriptionTaskState(taskState):
+            isSubscribed = if let states = taskState.value?.map(\.state) {
+                states.contains { [.subscribed, .inGracePeriod].contains($0) }
+            } else {
+                false
             }
         }
     }
@@ -89,5 +114,7 @@ public final class DonationSettings: Composable {
         case task(String)
         case restoreSubscriptionButtonTapped
         case onReceiveProductTaskState(Product.CollectionTaskState)
+        case onPurchaseCompleted(Product, Result<Product.PurchaseResult, any Error>)
+        case onReceiveSubscriptionTaskState(EntitlementTaskState<[Product.SubscriptionInfo.Status]>)
     }
 }

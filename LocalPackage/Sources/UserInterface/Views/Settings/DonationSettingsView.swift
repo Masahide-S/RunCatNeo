@@ -49,7 +49,7 @@ struct DonationSettingsView: View {
             } header: {
                 Text("oneTimeDonation", bundle: .module)
             } footer: {
-                if store.didCompleteOneTimeDonation {
+                if store.isPurchased {
                     Text("thankYouDonation", bundle: .module)
                         .foregroundStyle(.secondary)
                 }
@@ -60,10 +60,6 @@ struct DonationSettingsView: View {
                         .font(.system(size: 40))
                         .foregroundStyle(.secondary)
                         .productIconBorder()
-                }
-                .subscriptionStatusTask(for: store.subscriptionGroupID) { taskState in
-                    store.isSubscribed = taskState.value?.map(\.state)
-                        .contains { [.subscribed, .inGracePeriod].contains($0) } == true
                 }
                 .tint(.accentColor)
             } header: {
@@ -111,6 +107,12 @@ struct DonationSettingsView: View {
         }
         .storeProductsTask(for: DonationProduct.allCases.map(\.id)) { taskState in
             await store.send(.onReceiveProductTaskState(taskState))
+        }
+        .onInAppPurchaseCompletion { product, result in
+            await store.send(.onPurchaseCompleted(product, result))
+        }
+        .subscriptionStatusTask(for: store.subscriptionGroupID) { taskState in
+            await store.send(.onReceiveSubscriptionTaskState(taskState))
         }
     }
 }
