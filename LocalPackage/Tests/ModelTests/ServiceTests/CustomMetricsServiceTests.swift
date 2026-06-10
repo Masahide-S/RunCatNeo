@@ -340,6 +340,56 @@ struct CustomMetricsServiceTests {
     }
 
     @Test
+    func startMonitoring_sorts_existing_bundles_by_source_order() async throws {
+        let appState = AllocatedUnfairLock<AppState>(initialState: .init())
+        let firstBundle = CustomMetricsBundle(id: UUID(1), snapshot: try snapshot)
+        let secondBundle = CustomMetricsBundle(id: UUID(2), snapshot: try snapshot)
+        appState.withLock {
+            $0.metrics.send(Metrics(customMetricsBundles: [secondBundle, firstBundle]))
+        }
+        let storage = UserDefaultsClient.storage(initialSources: [makeSource(id: UUID(1)), makeSource(id: UUID(2))])
+        let sut = CustomMetricsService(.testDependencies(
+            appStateClient: .testDependency(appState),
+            dataClient: testDependency(of: DataClient.self) {
+                $0.read = { _ in Data(snapshotJSON.utf8) }
+            },
+            urlClient: testDependency(of: URLClient.self) {
+                $0.create = { _, _ in (false, URL(filePath: "/tmp/card.json")) }
+                $0.startAccessingSecurityScopedResource = { _ in true }
+            },
+            userDefaultsClient: storage.client
+        ))
+        sut.startMonitoring()
+        #expect(appState.withLock(\.metrics.latestValue)?.customMetricsBundles.map(\.id) == [UUID(1), UUID(2)])
+        sut.stopMonitoring()
+    }
+
+    @Test
+    func startMonitoring_emits_late_loaded_bundle_at_source_position() async throws {
+        let appState = AllocatedUnfairLock<AppState>(initialState: .init())
+        let secondBundle = CustomMetricsBundle(id: UUID(2), snapshot: try snapshot)
+        appState.withLock {
+            $0.metrics.send(Metrics(customMetricsBundles: [secondBundle]))
+        }
+        let storage = UserDefaultsClient.storage(initialSources: [makeSource(id: UUID(1)), makeSource(id: UUID(2))])
+        let sut = CustomMetricsService(.testDependencies(
+            appStateClient: .testDependency(appState),
+            dataClient: testDependency(of: DataClient.self) {
+                $0.read = { _ in Data(snapshotJSON.utf8) }
+            },
+            urlClient: testDependency(of: URLClient.self) {
+                $0.create = { _, _ in (false, URL(filePath: "/tmp/card.json")) }
+                $0.startAccessingSecurityScopedResource = { _ in true }
+            },
+            userDefaultsClient: storage.client
+        ))
+        sut.startMonitoring()
+        await waitUntil { appState.withLock(\.metrics.latestValue)?.customMetricsBundles.count == 2 }
+        #expect(appState.withLock(\.metrics.latestValue)?.customMetricsBundles.map(\.id) == [UUID(1), UUID(2)])
+        sut.stopMonitoring()
+    }
+
+    @Test
     func startMonitoring_appends_failed_placeholder_bundle_when_source_has_never_loaded() async throws {
         let appState = AllocatedUnfairLock<AppState>(initialState: .init())
         let source = makeSource()

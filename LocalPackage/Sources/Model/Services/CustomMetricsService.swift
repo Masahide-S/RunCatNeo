@@ -140,9 +140,7 @@ struct CustomMetricsService {
                 appState.customMetricsObservers.removeValue(forKey: $0)
             }
             var metrics = appState.metrics.latestValue ?? .init()
-            metrics.customMetricsBundles.removeAll {
-                staleIDs.contains($0.id)
-            }
+            metrics.customMetricsBundles = sortedBySourceOrder(metrics.customMetricsBundles, sources: sources)
             appState.metrics.send(metrics)
             return sources.filter {
                 appState.customMetricsObservers[$0.id] == nil
@@ -157,6 +155,7 @@ struct CustomMetricsService {
     }
 
     private func emitFailure(for source: CustomMetricsSource) {
+        let sources = userDefaultsRepository.customMetricsConfiguration.sources
         appStateClient.withLock {
             var metrics = $0.metrics.latestValue ?? .init()
             if let index = metrics.customMetricsBundles.firstIndex(where: { $0.id == source.id }) {
@@ -172,11 +171,13 @@ struct CustomMetricsService {
                     isFailed: true
                 ))
             }
+            metrics.customMetricsBundles = sortedBySourceOrder(metrics.customMetricsBundles, sources: sources)
             $0.metrics.send(metrics)
         }
     }
 
     private func emitSuccess(snapshot: CustomMetricsSnapshot, for source: CustomMetricsSource) {
+        let sources = userDefaultsRepository.customMetricsConfiguration.sources
         appStateClient.withLock {
             var metrics = $0.metrics.latestValue ?? .init()
             if let index = metrics.customMetricsBundles.firstIndex(where: { $0.id == source.id }) {
@@ -189,7 +190,17 @@ struct CustomMetricsService {
                     isFailed: false
                 ))
             }
+            metrics.customMetricsBundles = sortedBySourceOrder(metrics.customMetricsBundles, sources: sources)
             $0.metrics.send(metrics)
+        }
+    }
+
+    private func sortedBySourceOrder(
+        _ bundles: [CustomMetricsBundle],
+        sources: [CustomMetricsSource]
+    ) -> [CustomMetricsBundle] {
+        sources.compactMap { source in
+            bundles.first { $0.id == source.id }
         }
     }
 

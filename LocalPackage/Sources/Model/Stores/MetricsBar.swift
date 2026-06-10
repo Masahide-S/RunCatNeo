@@ -30,7 +30,6 @@ public final class MetricsBar: Composable {
     private let logService: LogService
 
     @ObservationIgnored private var task: Task<Void, Never>?
-    @ObservationIgnored private var customMetricsSourceIDs = [UUID]()
 
     public var metricsBarConfiguration: MetricsBarConfiguration
     public var systemInfoBundle: SystemInfoBundle
@@ -57,7 +56,6 @@ public final class MetricsBar: Composable {
         switch action {
         case let .task(screenName):
             logService.notice(.screenView(name: screenName))
-            customMetricsSourceIDs = userDefaultsRepository.customMetricsConfiguration.sources.map(\.id)
             if let metrics = appStateClient.withLock(\.metrics.latestValue) {
                 updateMetrics(from: metrics)
             }
@@ -79,7 +77,7 @@ public final class MetricsBar: Composable {
                     group.addTask {
                         let stream = appStateClient.withLock(\.customMetricsConfigurationChanges.stream)
                         for await _ in stream {
-                            await self?.updateCustomMetricsConfiguration()
+                            await self?.updateMetricsBarConfiguration()
                         }
                     }
                 }
@@ -93,23 +91,11 @@ public final class MetricsBar: Composable {
 
     private func updateMetrics(from metrics: Metrics) {
         systemInfoBundle = metrics.systemInfoBundle
-        customMetricsBundles = sortedBySourceOrder(metrics.customMetricsBundles)
+        customMetricsBundles = metrics.customMetricsBundles
     }
 
     private func updateMetricsBarConfiguration() {
         metricsBarConfiguration = userDefaultsRepository.metricsBarConfiguration
-    }
-
-    private func updateCustomMetricsConfiguration() {
-        customMetricsSourceIDs = userDefaultsRepository.customMetricsConfiguration.sources.map(\.id)
-        metricsBarConfiguration = userDefaultsRepository.metricsBarConfiguration
-        customMetricsBundles = sortedBySourceOrder(customMetricsBundles)
-    }
-
-    private func sortedBySourceOrder(_ bundles: [CustomMetricsBundle]) -> [CustomMetricsBundle] {
-        customMetricsSourceIDs.compactMap { id in
-            bundles.first { $0.id == id }
-        }
     }
 
     public enum Action: Sendable {
