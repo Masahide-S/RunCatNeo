@@ -39,9 +39,9 @@ struct CustomRunnerSettingsTests {
             frameImages: frameImages
         )
         await sut.send(.task)
-        await waitUntil { sut.previewingFrameImage != nil }
+        let previewedSecondFrameImage = await waitUntil { sut.previewingFrameImage == frameImages[1] }
         #expect(sut.customRunnerBundleList == [customBundle])
-        #expect(sut.previewingFrameImage == frameImages[1])
+        #expect(previewedSecondFrameImage)
         await sut.send(.onDisappear)
     }
 
