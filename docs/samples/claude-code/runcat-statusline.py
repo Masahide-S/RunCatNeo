@@ -30,7 +30,7 @@ OUT = Path(os.environ.get("RUNCAT_OUT_FILE", str(Path.home() / ".claude" / "runc
 def pct(title, value):
     if value is None:
         return None
-    return {"title": title, "formattedValue": f"{value}%", "normalizedValue": round(value / 100, 4)}
+    return {"title": title, "formattedValue": f"{value:g}%", "normalizedValue": round(value / 100, 4)}
 
 
 try:
