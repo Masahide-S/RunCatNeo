@@ -1,10 +1,23 @@
 {
-  "fill" : {
-    "linear-gradient" : [
-      "extended-srgb:0.00000,0.78431,0.70196,1.00000",
-      "extended-srgb:0.38039,0.33333,0.96078,1.00000"
-    ]
-  },
+  "fill-specializations" : [
+    {
+      "value" : {
+        "linear-gradient" : [
+          "srgb:0.41961,0.49804,0.49804,1.00000",
+          "srgb:0.11581,0.11835,0.23672,1.00000"
+        ]
+      }
+    },
+    {
+      "appearance" : "dark",
+      "value" : {
+        "linear-gradient" : [
+          "srgb:0.41961,0.49804,0.49804,1.00000",
+          "srgb:0.11581,0.11835,0.23672,1.00000"
+        ]
+      }
+    }
+  ],
   "groups" : [
     {
       "layers" : [
@@ -13,7 +26,7 @@
           "fill-specializations" : [
             {
               "value" : {
-                "solid" : "extended-gray:1.00000,1.00000"
+                "automatic-gradient" : "extended-gray:1.00000,1.00000"
               }
             },
             {
@@ -23,7 +36,7 @@
               }
             }
           ],
-          "glass" : true,
+          "glass" : false,
           "hidden" : false,
           "image-name" : "cat.png",
           "name" : "cat",
