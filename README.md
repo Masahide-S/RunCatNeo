@@ -45,7 +45,7 @@
 
 ## Requirements
 
-- Development with Xcode 26.2+
+- Development with Xcode 26.5+
 - Compatible with macOS 26.3+
 - Written in Swift 6.2
 
