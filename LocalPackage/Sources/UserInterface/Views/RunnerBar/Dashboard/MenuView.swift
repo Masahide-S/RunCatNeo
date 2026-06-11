@@ -64,7 +64,7 @@ struct MenuView: View {
                 Label {
                     Text("openActivityMonitor", bundle: .module)
                 } icon: {
-                    Image(systemName: "waveform.path.ecg")
+                    Image(.activityMonitor)
                 }
             }
             Divider()

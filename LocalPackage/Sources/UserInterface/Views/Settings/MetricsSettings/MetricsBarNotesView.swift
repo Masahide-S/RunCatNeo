@@ -26,7 +26,7 @@ struct MetricsBarNotesView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Image(nsImage: NSImage(named: NSImage.applicationIconName)!)
+            Image(nsImage: NSImage.appIcon)
                 .resizable()
                 .scaledToFit()
                 .frame(width: 32, height: 32)

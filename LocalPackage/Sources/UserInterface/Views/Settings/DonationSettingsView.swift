@@ -32,7 +32,7 @@ struct DonationSettingsView: View {
                 Label {
                     Text("donationDescription", bundle: .module)
                 } icon: {
-                    Image(nsImage: NSImage(named: NSImage.applicationIconName)!)
+                    Image(nsImage: NSImage.appIcon)
                         .resizable()
                         .scaledToFit()
                 }
