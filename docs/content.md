@@ -47,10 +47,6 @@ Beyond CPU, RunCat Neo can watch a JSON file you maintain and render it as a car
 - [Claude Code statusLine sample](https://github.com/runcat-dev/RunCatNeo/tree/main/docs/samples/claude-code)
 - [Bitcoin price sample](https://github.com/runcat-dev/RunCatNeo/tree/main/docs/samples/bitcoin)
 
-## Languages
-
-RunCat Neo speaks ten languages: English, Japanese, Chinese (Simplified and Traditional), Korean, French, German, Spanish, Russian, and Vietnamese.
-
 ## FAQ
 
 :::details What does the running cat actually show?
@@ -59,6 +55,10 @@ The cat's running speed reflects your Mac's CPU usage in real time. When the sys
 
 :::details How do I install it?
 RunCat Neo is distributed through the Mac App Store and requires macOS 26 or later. [Download it here](https://apps.apple.com/us/app/runcat-neo/id6757801838).
+:::
+
+:::details What languages does it support?
+RunCat Neo is available in ten languages: English, Japanese, Chinese (Simplified), Chinese (Traditional), Korean, French, German, Spanish, Russian, and Vietnamese.
 :::
 
 :::details What are Custom Metrics?
