@@ -9,60 +9,94 @@ The cat tells you the CPU usage of your Mac by how fast it runs — one glance a
 
 ![RunCat Neo demo](./images/demo.gif =480x)
 
-[![Download on the App Store](./images/download_on_app_store_en.svg)](https://apps.apple.com/us/app/runcat-neo/id6757801838)
+[![Download on the App Store](./images/en/download_on_app_store.svg)](https://apps.apple.com/us/app/runcat-neo/id6757801838)
 
 Requires macOS 26 or later · [View on GitHub](https://github.com/runcat-dev/RunCatNeo)
 
 ## Features
 
-~ | [~speed] | [~metrics] | [~light] |
+~ | [~load] | [~metrics] | [~comfort] |
 ~ | :--- | :--- | :--- |
 
-:::warp speed
+:::warp load
 
-### 🐈 Load at a glance
+### Load at a glance
 
 The cat speeds up as your CPU gets busier and slows to a stroll when things are calm. No numbers to read — just watch it run.
 :::
 
 :::warp metrics
 
-### 📊 Custom Metrics
+### Rich system metrics
 
-Point RunCat at any local JSON file and it becomes a live card on the dashboard. CPU, memory, and anything else you care to track.
+CPU, GPU, memory, temperature, storage, and network — keep an eye on everything that matters right from the taskbar.
 :::
 
-:::warp light
+:::warp comfort
 
-### 🪶 Light & native
+### Bring a little comfort to your daily life.
 
-Built for modern macOS in Swift. It lives quietly in the menu bar and sips system resources while it runs.
+Just a quick glance between tasks offers a moment of relaxation. Beyond cats, you can also switch to other wonderful runners.
+:::
+
+## System Metrics
+
+~ | [~metrics-shot] | [~metrics-list] |
+~ | :--- | :--- |
+
+:::warp metrics-shot
+![System metrics](./images/en/system_metrics.jpg)
+:::
+
+:::warp metrics-list
+
+You can check the metrics you're interested in on the dashboard, which can be opened by clicking the menu bar.
+
+- CPU Usage
+- Memory Pressure
+- Storage Capacity
+- Battery Status
+- Network Connectivity
+
 :::
 
 ## Custom Metrics
 
+~ | [~custom-metrics-shot] | [~custom-metrics-description] |
+~ | :--- | :--- |
+
+:::warp custom-metrics-shot
+![Custom metrics](./images/en/custom_metrics.jpg)
+:::
+
+:::warp custom-metrics-description
 Beyond CPU, RunCat Neo can watch a JSON file you maintain and render it as a card — refreshed the moment the file changes, with no polling and no network calls. Track Claude Code usage, GPU temperature, a Bitcoin price, GitHub contributions — anything you can write to a file.
 
 - [JSON schema reference](https://github.com/runcat-dev/RunCatNeo/blob/main/docs/CustomMetricsSchema.md)
 - [Claude Code statusLine sample](https://github.com/runcat-dev/RunCatNeo/tree/main/docs/samples/claude-code)
 - [Bitcoin price sample](https://github.com/runcat-dev/RunCatNeo/tree/main/docs/samples/bitcoin)
 
+:::
+
+# Custom runners
+
+~ | [~custom-runners-shot] | [~custom-runners-description] |
+~ | :--- | :--- |
+
+:::warp custom-runners-shot
+![Custom runner](./images/en/custom_runner.jpg)
+:::
+
+:::warp custom-runners-description
+Not a cat person? No problem. Prepare your own keyframe animation and run a runner of your own making.
+
+Additionally, the [Runner Gallery](https://runcat-dev.github.io/RunnerGallery/) showcases and distributes resources for custom runners. Why not find a runner you love to use, or even share your own creation with the community?
+:::
+
 ## FAQ
 
-:::details What does the running cat actually show?
-The cat's running speed reflects your Mac's CPU usage in real time. When the system is idle it walks slowly; under heavy load it sprints. It is a calm, ambient way to feel how busy your machine is without reading any numbers.
-:::
-
-:::details How do I install it?
-RunCat Neo is distributed through the Mac App Store and requires macOS 26 or later. [Download it here](https://apps.apple.com/us/app/runcat-neo/id6757801838).
-:::
-
 :::details What languages does it support?
-RunCat Neo is available in ten languages: English, Japanese, Chinese (Simplified), Chinese (Traditional), Korean, French, German, Spanish, Russian, and Vietnamese.
-:::
-
-:::details What are Custom Metrics?
-A Custom Metric is any local JSON file written in the [documented format](https://github.com/runcat-dev/RunCatNeo/blob/main/docs/CustomMetricsSchema.md). You keep the file up to date with a small script, and RunCat watches it with filesystem events and renders it as a card the instant it changes. See the [ready-made samples](https://github.com/runcat-dev/RunCatNeo/tree/main/docs/samples) to get started.
+RunCat Neo is available in ten languages: English, Japanese, Chinese (Simplified and Traditional), Korean, French, German, Spanish, Russian, and Vietnamese.
 :::
 
 :::details Is this the same as the original RunCat?

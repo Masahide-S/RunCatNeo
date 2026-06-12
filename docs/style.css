@@ -255,6 +255,48 @@ body {
   font-size: 0.96rem;
 }
 
+/* ----- Image + list columns (metrics / runner sections) ----- */
+
+.lbs-table-silent tr:has(.lbs-image) {
+  grid-template-columns: 1fr 1fr;
+  gap: 2.5rem;
+  align-items: center;
+}
+
+.lbs-table-silent tr:has(.lbs-image) th {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+.lbs-table-silent tr:has(.lbs-image) th:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+
+.lbs-table-silent tr:has(.lbs-image) .lbs-paragraph {
+  font-size: 1rem;
+  margin: 0 0 1rem;
+}
+
+.lbs-table-silent tr:has(.lbs-image) .lbs-ul {
+  margin: 0;
+}
+
+/* ----- Screenshots ----- */
+
+.lbs-image[src*="system_metrics"],
+.lbs-image[src*="custom_metrics"],
+.lbs-image[src*="custom_runner"] {
+  width: 100%;
+  max-width: 600px;
+  border-radius: var(--lbs-radius);
+  box-shadow: var(--lbs-shadow);
+}
+
 /* ----- Blockquote ----- */
 
 .lbs-blockquote {
@@ -360,6 +402,31 @@ body {
   font-weight: 700;
 }
 
+/* ----- Legal pages (restrained, document-like header) ----- */
+
+body.legal .lbs-header {
+  text-align: left;
+}
+
+body.legal .lbs-header .lbs-heading-1 {
+  font-size: 1.9rem;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+body.legal .lbs-header .lbs-paragraph {
+  font-size: 0.95rem;
+  font-weight: 400;
+}
+
+body.legal .lbs-header + .lbs-paragraph {
+  max-width: none;
+  margin: 0.85rem 0;
+  text-align: left;
+  font-size: 1rem;
+}
+
 /* ----- Responsive ----- */
 
 @media (max-width: 640px) {
@@ -372,8 +439,13 @@ body {
   }
 
   .lbs-table-silent tr,
-  .lbs-table-silent tr:has(th:nth-child(3)) {
+  .lbs-table-silent tr:has(th:nth-child(3)),
+  .lbs-table-silent tr:has(.lbs-image) {
     grid-template-columns: 1fr;
+  }
+
+  .lbs-table-silent tr:has(.lbs-image) {
+    gap: 1.5rem;
   }
 
   .lbs-heading-2 {

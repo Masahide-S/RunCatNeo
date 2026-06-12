@@ -2,67 +2,102 @@
 
 # RunCat Neo
 
-メニューバーに住む猫。
+メニューバーでネコ飼ってみませんか？
 :::
 
-猫の走る速さが、MacのCPU使用率を教えてくれます。メニューバーをちらっと見るだけで十分です。
+ネコの走る速さで Mac の CPU 負荷がわかります。  
+メニューバーをちらっと見るだけで十分です。
 
 ![RunCat Neo デモ](./images/demo.gif =480x)
 
-[![App Store でダウンロード](./images/download_on_app_store_ja.svg)](https://apps.apple.com/us/app/runcat-neo/id6757801838)
+[![App Store でダウンロード](./images/ja/download_on_app_store.svg)](https://apps.apple.com/us/app/runcat-neo/id6757801838)
 
-macOS 26 以降が必要 · [GitHub で見る](https://github.com/runcat-dev/RunCatNeo)
+動作環境：macOS 26 以降 · [GitHub で見る](https://github.com/runcat-dev/RunCatNeo)
 
 ## 特長
 
-~ | [~speed] | [~metrics] | [~light] |
+~ | [~load] | [~metrics] | [~comfort] |
 ~ | :--- | :--- | :--- |
 
-:::warp speed
+:::warp load
 
-### 🐈 ひと目で負荷がわかる
+### ひと目で負荷がわかる
 
-CPU が忙しくなるほど猫は速く走り、落ち着いているときはゆっくり歩きます。数字を読む必要はありません。走る姿を眺めるだけです。
+CPU が忙しくなるほどネコは速く走り、落ち着いているときはゆっくり歩きます。数字を読む必要はありません。走る姿を眺めるだけです。
 :::
 
 :::warp metrics
 
-### 📊 カスタムメトリクス
+### 豊富なシステムメトリクス
 
-ローカルの JSON ファイルを指定するだけで、ダッシュボードのカードになります。CPU やメモリ、そのほか気になる情報を何でも表示できます。
+CPU、GPU、メモリ、温度、ストレージ、ネットワーク。気になる情報をすべてタスクバーから見守れます。
 :::
 
-:::warp light
+:::warp comfort
 
-### 🪶 軽量でネイティブ
+### 生活にささやかな癒しを
 
-Swift で最新の macOS 向けに作られています。メニューバーに静かに常駐し、システムリソースをほとんど消費しません。
+作業の合間にふと目に映るだけでちょっとした癒しを提供します。ネコ意外にも素敵なランナーに切り替えられます。
+:::
+
+## システムメトリクス
+
+~ | [~metrics-shot] | [~metrics-list] |
+~ | :--- | :--- |
+
+:::warp metrics-shot
+![システムメトリクス](./images/ja/system_metrics.jpg)
+:::
+
+:::warp metrics-list
+
+メニューバーをクリックして開けるダッシュボードで気になるメトリクスを確認できます。
+
+- CPU 負荷
+- メモリプレッシャー
+- ストレージ容量
+- バッテリー状態
+- ネットワーク接続状態
+
 :::
 
 ## カスタムメトリクス
 
+~ | [~custom-metrics-shot] | [~custom-metrics-description] |
+~ | :--- | :--- |
+
+:::warp custom-metrics-shot
+![カスタムメトリクス](./images/ja/custom_metrics.jpg)
+:::
+
+:::warp custom-metrics-description
 CPU だけでなく、RunCat Neo は自分で用意した JSON ファイルを監視し、カードとして表示できます。ファイルが変化した瞬間に更新され、ポーリングもネットワーク通信もありません。Claude Code の使用状況、GPU 温度、ビットコインの価格、GitHub のコントリビューションなど、ファイルに書き出せるものは何でも表示できます。
 
 - [JSON スキーマリファレンス](https://github.com/runcat-dev/RunCatNeo/blob/main/docs/CustomMetricsSchema.md)
 - [Claude Code statusLine サンプル](https://github.com/runcat-dev/RunCatNeo/tree/main/docs/samples/claude-code)
 - [ビットコイン価格サンプル](https://github.com/runcat-dev/RunCatNeo/tree/main/docs/samples/bitcoin)
 
+:::
+
+## カスタムランナー
+
+~ | [~custom-runners-shot] | [~custom-runners-description] |
+~ | :--- | :--- |
+
+:::warp custom-runners-shot
+![カスタムランナー](./images/ja/custom_runner.jpg)
+:::
+
+:::warp custom-runners-description
+ネコが好みでなくても大丈夫。自分でキーフレームアニメーションを用意すれば自作のランナーを走らせられます。
+
+また、[Runner Gallery](https://runcat-dev.github.io/RunnerGallery/)ではカスタムランナー向けのリソースが展示・配布されています。好みのランナーを見つけて使ったり、自慢のランナーを公開してみてはいかがでしょうか？
+:::
+
 ## よくある質問
 
-:::details 走る猫は何を表しているの？
-猫の走る速さは、Mac のリアルタイムな CPU 使用率を表しています。システムがアイドル状態のときはゆっくり歩き、高負荷のときは全力疾走します。数字を読まなくても、マシンの忙しさを感覚的につかめる穏やかな方法です。
-:::
-
-:::details どうやってインストールするの？
-RunCat Neo は Mac App Store で配信されており、macOS 26 以降が必要です。[こちらからダウンロード](https://apps.apple.com/us/app/runcat-neo/id6757801838)できます。
-:::
-
 :::details 対応している言語は？
-RunCat Neo は次の 10 言語に対応しています。英語、日本語、中国語（簡体字）、中国語（繁体字）、韓国語、フランス語、ドイツ語、スペイン語、ロシア語、ベトナム語。
-:::
-
-:::details カスタムメトリクスとは？
-カスタムメトリクスとは、[所定の形式](https://github.com/runcat-dev/RunCatNeo/blob/main/docs/CustomMetricsSchema.md)で書かれたローカルの JSON ファイルのことです。小さなスクリプトでファイルを最新の状態に保つと、RunCat がファイルシステムのイベントで監視し、変化した瞬間にカードとして表示します。まずは[すぐに使えるサンプル](https://github.com/runcat-dev/RunCatNeo/tree/main/docs/samples)から始めてみてください。
+RunCat Neo は次の 10 言語に対応しています。英語、日本語、中国語（簡体字・繁体字）、韓国語、フランス語、ドイツ語、スペイン語、ロシア語、ベトナム語。
 :::
 
 :::details 既存の RunCat と同じもの？
