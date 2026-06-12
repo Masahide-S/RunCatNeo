@@ -44,6 +44,14 @@ These are the authoritative style rules for all Swift code in this repository.
 ## Code Patterns
 
 - Prefer `guard` with early return over nested `if` for optional unwrapping and validation.
+- In multiline `guard` statements, write `else {` at the end of the last condition line — never on its own line:
+
+  ```swift
+  guard let data = representation.representation(using: .tiff, properties: [:]),
+        let image = NSImage(data: data) else {
+      return nil
+  }
+  ```
 - Write simple value mappings as switch expressions with single-line cases (`case .cat: 5`).
 - Prefer `if`/`switch` expressions for variable assignment whenever they fit: assigning the result of one expression reads more cleanly than repeating the assignment inside every branch of an `if`/`switch` statement. (For SwiftUI view modifiers and other inline values, a ternary expression is sometimes clearer — use judgment.)
 - Prefer leading-dot shorthand and semantic constants when the type is inferable (`.zero` over `0`).
