@@ -57,8 +57,7 @@ struct SystemMetricsService {
     }
 
     func updateMetrics(from systemInfoBundle: SystemInfoBundle) {
-        appStateClient.withLock {
-            var metrics = $0.metrics.latestValue ?? .init()
+        appStateClient.send(\.metrics, default: .init()) { metrics in
             metrics.systemInfoBundle = systemInfoBundle
             if let value = systemInfoBundle.cpuInfo?.percentage.value {
                 metrics.cpuRingBuffer.append(value)
@@ -66,13 +65,10 @@ struct SystemMetricsService {
             if let value = systemInfoBundle.memoryInfo?.percentage.value {
                 metrics.memoryRingBuffer.append(value)
             }
-            $0.metrics.send(metrics)
         }
     }
 
     func emitConfigurationChange() {
-        appStateClient.withLock {
-            $0.systemMetricsConfigurationChanges.send()
-        }
+        appStateClient.send(\.systemMetricsConfigurationChanges, ())
     }
 }

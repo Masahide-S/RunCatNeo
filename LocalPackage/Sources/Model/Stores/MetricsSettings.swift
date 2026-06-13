@@ -75,7 +75,7 @@ public final class MetricsSettings: Composable {
         case let .task(screenName):
             logService.notice(.screenView(name: screenName))
             task?.cancel()
-            task = Task { [weak self, appStateClient] in
+            task = Task.immediate { [weak self, appStateClient] in
                 let stream = appStateClient.withLock(\.systemMetricsConfigurationChanges.stream)
                 for await _ in stream {
                     self?.refreshSystemMetricsConfiguration()

@@ -97,9 +97,7 @@ struct CustomMetricsService {
     }
 
     func emitConfigurationChange() {
-        appStateClient.withLock {
-            $0.customMetricsConfigurationChanges.send()
-        }
+        appStateClient.send(\.customMetricsConfigurationChanges, ())
     }
 
     func stopMonitoring() {
@@ -108,9 +106,9 @@ struct CustomMetricsService {
             $0.customMetricsReconcileObserver = nil
             $0.customMetricsObservers.values.forEach { $0.cancel() }
             $0.customMetricsObservers.removeAll()
-            var metrics = $0.metrics.latestValue ?? .init()
+        }
+        appStateClient.send(\.metrics, default: .init()) { metrics in
             metrics.customMetricsBundles.removeAll()
-            $0.metrics.send(metrics)
         }
     }
 
@@ -132,19 +130,19 @@ struct CustomMetricsService {
     private func reconcile() {
         let sources = userDefaultsRepository.customMetricsConfiguration.sources
         let desiredIDs = Set(sources.map(\.id))
-        let newSources = appStateClient.withLock { appState in
+        let newSources = appStateClient.withLock { appState -> [CustomMetricsSource] in
             let currentIDs = Set(appState.customMetricsObservers.keys)
             let staleIDs = currentIDs.subtracting(desiredIDs)
             staleIDs.forEach {
                 appState.customMetricsObservers[$0]?.cancel()
                 appState.customMetricsObservers.removeValue(forKey: $0)
             }
-            var metrics = appState.metrics.latestValue ?? .init()
-            metrics.customMetricsBundles = sortedBySourceOrder(metrics.customMetricsBundles, sources: sources)
-            appState.metrics.send(metrics)
             return sources.filter {
                 appState.customMetricsObservers[$0.id] == nil
             }
+        }
+        appStateClient.send(\.metrics, default: .init()) { metrics in
+            metrics.customMetricsBundles = Self.sortedBySourceOrder(metrics.customMetricsBundles, sources: sources)
         }
         newSources.forEach { source in
             let observer = makeObserver(for: source)
@@ -156,8 +154,7 @@ struct CustomMetricsService {
 
     private func emitFailure(for source: CustomMetricsSource) {
         let sources = userDefaultsRepository.customMetricsConfiguration.sources
-        appStateClient.withLock {
-            var metrics = $0.metrics.latestValue ?? .init()
+        appStateClient.send(\.metrics, default: .init()) { metrics in
             if let index = metrics.customMetricsBundles.firstIndex(where: { $0.id == source.id }) {
                 metrics.customMetricsBundles[index].isFailed = true
             } else {
@@ -171,15 +168,13 @@ struct CustomMetricsService {
                     isFailed: true
                 ))
             }
-            metrics.customMetricsBundles = sortedBySourceOrder(metrics.customMetricsBundles, sources: sources)
-            $0.metrics.send(metrics)
+            metrics.customMetricsBundles = Self.sortedBySourceOrder(metrics.customMetricsBundles, sources: sources)
         }
     }
 
     private func emitSuccess(snapshot: CustomMetricsSnapshot, for source: CustomMetricsSource) {
         let sources = userDefaultsRepository.customMetricsConfiguration.sources
-        appStateClient.withLock {
-            var metrics = $0.metrics.latestValue ?? .init()
+        appStateClient.send(\.metrics, default: .init()) { metrics in
             if let index = metrics.customMetricsBundles.firstIndex(where: { $0.id == source.id }) {
                 metrics.customMetricsBundles[index].snapshot = snapshot
                 metrics.customMetricsBundles[index].isFailed = false
@@ -190,12 +185,11 @@ struct CustomMetricsService {
                     isFailed: false
                 ))
             }
-            metrics.customMetricsBundles = sortedBySourceOrder(metrics.customMetricsBundles, sources: sources)
-            $0.metrics.send(metrics)
+            metrics.customMetricsBundles = Self.sortedBySourceOrder(metrics.customMetricsBundles, sources: sources)
         }
     }
 
-    private func sortedBySourceOrder(
+    private static func sortedBySourceOrder(
         _ bundles: [CustomMetricsBundle],
         sources: [CustomMetricsSource]
     ) -> [CustomMetricsBundle] {

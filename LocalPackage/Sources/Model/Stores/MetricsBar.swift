@@ -63,24 +63,24 @@ public final class MetricsBar: Composable {
                 updateMetrics(from: metrics)
             }
             task?.cancel()
-            task = Task { [weak self, appStateClient] in
+            task = Task.immediate { [weak self, appStateClient] in
                 await withTaskGroup { group in
-                    group.addTask {
+                    group.addImmediateTask {
                         let stream = appStateClient.withLock(\.metrics.stream)
                         for await value in stream {
-                            await self?.updateMetrics(from: value)
+                            self?.updateMetrics(from: value)
                         }
                     }
-                    group.addTask {
+                    group.addImmediateTask {
                         let stream = appStateClient.withLock(\.systemMetricsConfigurationChanges.stream)
                         for await _ in stream {
-                            await self?.updateMetricsBarConfiguration()
+                            self?.updateMetricsBarConfiguration()
                         }
                     }
-                    group.addTask {
+                    group.addImmediateTask {
                         let stream = appStateClient.withLock(\.customMetricsConfigurationChanges.stream)
                         for await _ in stream {
-                            await self?.updateMetricsBarConfiguration()
+                            self?.updateMetricsBarConfiguration()
                         }
                     }
                 }

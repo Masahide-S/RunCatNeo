@@ -27,12 +27,12 @@ struct RunnerSettingsTests {
         await sut.send(.task("RunnerSettingsTests"))
         #expect(sut.currentRunner == Runner.default)
         appState.withLock {
-            $0.runnerBundles.send(RunnerBundle(runner: Runner(kind: .parrot), frame: .preset("parrot-frame-0")))
-            $0.runnerBundleLists.send([RunnerBundle(runner: Runner(kind: .parrot), frame: .preset("parrot-frame-0"))])
+            $0.runnerBundles.send(RunnerBundle(runner: Runner(kind: .dog), frame: .preset("dog-frame-0")))
+            $0.runnerBundleLists.send([RunnerBundle(runner: Runner(kind: .dog), frame: .preset("dog-frame-0"))])
         }
-        await waitUntil { sut.currentRunner == Runner(kind: .parrot) && !sut.runnerBundleList.isEmpty }
-        #expect(sut.currentRunner == Runner(kind: .parrot))
-        #expect(sut.runnerBundleList.map(\.runner) == [Runner(kind: .parrot)])
+        await waitUntil { sut.currentRunner == Runner(kind: .dog) && !sut.runnerBundleList.isEmpty }
+        #expect(sut.currentRunner == Runner(kind: .dog))
+        #expect(sut.runnerBundleList.map(\.runner) == [Runner(kind: .dog)])
         await sut.send(.onDisappear)
     }
 
@@ -53,9 +53,9 @@ struct RunnerSettingsTests {
     func send_selectRunner_updates_current_runner() async {
         let appState = AllocatedUnfairLock<AppState>(initialState: .init())
         let sut = RunnerSettings(.testDependencies(appStateClient: .testDependency(appState)))
-        await sut.send(.selectRunner(Runner(kind: .parrot)))
-        #expect(sut.currentRunner == Runner(kind: .parrot))
-        #expect(appState.withLock(\.runnerBundles.latestValue)?.runner == Runner(kind: .parrot))
+        await sut.send(.selectRunner(Runner(kind: .dog)))
+        #expect(sut.currentRunner == Runner(kind: .dog))
+        #expect(appState.withLock(\.runnerBundles.latestValue)?.runner == Runner(kind: .dog))
     }
 
     @MainActor @Test

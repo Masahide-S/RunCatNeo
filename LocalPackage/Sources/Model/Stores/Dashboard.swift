@@ -74,7 +74,7 @@ public final class Dashboard: Composable {
                 updateMetrics(metrics)
             }
             task?.cancel()
-            task = Task { [weak self, appStateClient] in
+            task = Task.immediate { [weak self, appStateClient] in
                 let stream = appStateClient.withLock(\.metrics.stream)
                 for await value in stream {
                     self?.updateMetrics(value)

@@ -143,11 +143,11 @@ struct RunnerServiceTests {
         let sut = RunnerService(.testDependencies(
             appStateClient: .testDependency(appState),
             userDefaultsClient: testDependency(of: UserDefaultsClient.self) {
-                $0.string = { _ in "parrot" }
+                $0.string = { _ in "dog" }
             }
         ))
         try sut.setup()
-        #expect(appState.withLock(\.runnerBundles.latestValue)?.runner == Runner(kind: .parrot))
+        #expect(appState.withLock(\.runnerBundles.latestValue)?.runner == Runner(kind: .dog))
         #expect(appState.withLock(\.runnerBundleLists.latestValue)?.count == RunnerKind.allCases.count)
     }
 

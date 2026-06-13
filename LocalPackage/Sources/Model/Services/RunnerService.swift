@@ -53,9 +53,7 @@ struct RunnerService {
         }
         let runnerBundle = RunnerBundle(runner: runner, frames: frames)
         userDefaultsRepository.runnerID = runner.id
-        appStateClient.withLock {
-            $0.runnerBundles.send(runnerBundle)
-        }
+        appStateClient.send(\.runnerBundles, runnerBundle)
     }
 
     func loadRunnerBundleList() {
@@ -68,9 +66,7 @@ struct RunnerService {
             }
             return RunnerBundle(runner: runner, frame: frame)
         }
-        appStateClient.withLock {
-            $0.runnerBundleLists.send(runnerBundles)
-        }
+        appStateClient.send(\.runnerBundleLists, runnerBundles)
     }
 
     func setup() throws {
@@ -97,16 +93,12 @@ struct RunnerService {
         } else {
             cpuValue
         }
-        appStateClient.withLock {
-            $0.runnerSpeeds.send(speed)
-        }
+        appStateClient.send(\.runnerSpeeds, speed)
     }
 
     func resendCurrentRunnerBundle() {
-        appStateClient.withLock {
-            if let runnerBundle = $0.runnerBundles.latestValue {
-                $0.runnerBundles.send(runnerBundle)
-            }
+        if let runnerBundle = appStateClient.withLock(\.runnerBundles.latestValue) {
+            appStateClient.send(\.runnerBundles, runnerBundle)
         }
     }
 

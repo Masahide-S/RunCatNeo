@@ -70,7 +70,7 @@ public final class CustomMetricsSettings: Composable {
             customMetricsSources = userDefaultsRepository.customMetricsConfiguration.sources
             refreshFailedCustomMetricsSourceIDs()
             task?.cancel()
-            task = Task { [weak self, appStateClient] in
+            task = Task.immediate { [weak self, appStateClient] in
                 let stream = appStateClient.withLock(\.metrics.stream)
                 for await _ in stream {
                     self?.refreshFailedCustomMetricsSourceIDs()

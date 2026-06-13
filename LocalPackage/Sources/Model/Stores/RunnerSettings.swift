@@ -77,18 +77,18 @@ public final class RunnerSettings: Composable {
                 currentRunner = runnerBundle.runner
             }
             task?.cancel()
-            task = Task { [weak self, appStateClient] in
+            task = Task.immediate { [weak self, appStateClient] in
                 await withTaskGroup { group in
-                    group.addTask {
+                    group.addImmediateTask {
                         let stream = appStateClient.withLock(\.runnerBundles.stream)
                         for await value in stream {
-                            await self?.updateCurrentRunner(from: value)
+                            self?.updateCurrentRunner(from: value)
                         }
                     }
-                    group.addTask {
+                    group.addImmediateTask {
                         let stream = appStateClient.withLock(\.runnerBundleLists.stream)
                         for await value in stream {
-                            await self?.update(runnerBundleList: value)
+                            self?.update(runnerBundleList: value)
                         }
                     }
                 }

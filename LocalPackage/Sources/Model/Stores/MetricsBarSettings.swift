@@ -58,7 +58,7 @@ public final class MetricsBarSettings: Composable {
             metricsBarConfiguration = userDefaultsRepository.metricsBarConfiguration
             customMetricsSources = userDefaultsRepository.customMetricsConfiguration.sources
             task?.cancel()
-            task = Task { [weak self, appStateClient] in
+            task = Task.immediate { [weak self, appStateClient] in
                 let stream = appStateClient.withLock(\.customMetricsConfigurationChanges.stream)
                 for await _ in stream {
                     self?.updateCustomMetricsConfiguration()
