@@ -48,7 +48,7 @@ struct SystemInfoStackView: View {
                     BarGraphView(value: storageInfo.percentage.value)
                 }
             }
-            if let batteryInfo = systemInfoBundle.batteryInfo?.masked(isPreview) {
+            if let batteryInfo = systemInfoBundle.batteryInfo?.simulated(isPreview) {
                 Divider()
                 SystemInfoView(systemInfo: batteryInfo, isVisibleDetails: batteryInfo.isInstalled) {
                     EmptyView()

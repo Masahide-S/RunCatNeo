@@ -22,12 +22,6 @@ import SystemInfoKit
 
 extension NetworkInfo {
     func masked(_ masked: Bool) -> NetworkInfo {
-        NetworkInfo(
-            hasConnection: hasConnection,
-            networkInterface: networkInterface,
-            ipAddress: masked ? "192.0.2.1" : ipAddress,
-            upload: upload,
-            download: download
-        )
+        self.masked(with: "192.0.2.1", isEnabled: masked)
     }
 }

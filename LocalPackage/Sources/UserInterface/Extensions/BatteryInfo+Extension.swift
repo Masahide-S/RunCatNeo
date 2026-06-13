@@ -21,19 +21,15 @@
 import SystemInfoKit
 
 extension BatteryInfo {
-    func masked(_ masked: Bool) -> BatteryInfo {
-        if masked {
-            BatteryInfo(
+    func simulated(_ simulated: Bool) -> BatteryInfo {
+        self.simulated(
+            with: .init(
                 percentage: .init(rawValue: 0.746),
-                isInstalled: true,
-                isCharging: false,
-                adapterName: String(localized: "battery", bundle: .module),
                 maxCapacity: .init(rawValue: 0.937),
                 cycleCount: 18,
                 temperature: .init(value: 30.3)
-            )
-        } else {
-            self
-        }
+            ),
+            isEnabled: simulated
+        )
     }
 }
