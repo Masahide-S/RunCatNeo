@@ -38,7 +38,8 @@ struct MetricsBarView: View {
         if store.metricsBarConfiguration.showsStorage, store.systemInfoBundle.storageInfo != nil {
             widthArray.append(iconWidth + IndicatorKind.usageFullLabel.size.width)
         }
-        if store.metricsBarConfiguration.showsBattery, let batteryInfo = store.systemInfoBundle.batteryInfo {
+        if store.metricsBarConfiguration.showsBattery,
+           let batteryInfo = store.systemInfoBundle.batteryInfo?.masked(store.isPreview) {
             if batteryInfo.isInstalled {
                 widthArray.append(iconWidth + IndicatorKind.usageFullLabel.size.width)
             } else {
@@ -76,7 +77,7 @@ struct MetricsBarView: View {
                 if store.metricsBarConfiguration.showsStorage, let storageInfo = store.systemInfoBundle.storageInfo {
                     drawSystemInfo(context: &context, point: &point, systemInfo: storageInfo)
                 }
-                if store.metricsBarConfiguration.showsBattery, let batteryInfo = store.systemInfoBundle.batteryInfo {
+                if store.metricsBarConfiguration.showsBattery, let batteryInfo = store.systemInfoBundle.batteryInfo?.masked(store.isPreview) {
                     drawSystemInfo(context: &context, point: &point, systemInfo: batteryInfo)
                 }
                 if store.metricsBarConfiguration.showsNetwork, let networkInfo = store.systemInfoBundle.networkInfo {

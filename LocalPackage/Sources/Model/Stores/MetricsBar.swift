@@ -34,6 +34,7 @@ public final class MetricsBar: Composable {
     public var metricsBarConfiguration: MetricsBarConfiguration
     public var systemInfoBundle: SystemInfoBundle
     public var customMetricsBundles: [CustomMetricsBundle]
+    public let isPreview: Bool
     public let action: (Action) async -> Void
 
     public init(
@@ -41,6 +42,7 @@ public final class MetricsBar: Composable {
         metricsBarConfiguration: MetricsBarConfiguration? = nil,
         systemInfoBundle: SystemInfoBundle = .init(),
         customMetricsBundles: [CustomMetricsBundle] = [],
+        isPreview: Bool? = nil,
         action: @escaping (Action) async -> Void = { _ in }
     ) {
         self.appStateClient = appDependencies.appStateClient
@@ -49,6 +51,7 @@ public final class MetricsBar: Composable {
         self.metricsBarConfiguration = metricsBarConfiguration ?? userDefaultsRepository.metricsBarConfiguration
         self.systemInfoBundle = systemInfoBundle
         self.customMetricsBundles = customMetricsBundles
+        self.isPreview = isPreview ?? ProcessInfo.isPreview
         self.action = action
     }
 

@@ -1,8 +1,8 @@
 /*
- CPUMetrics+Extension.swift
+ BatteryInfo+Extension.swift
  UserInterface
 
- Created by Takuto Nakamura on 2026/05/21.
+ Created by Takuto Nakamura on 2026/06/13.
  Copyright 2026 Kyome22 (Takuto Nakamura)
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,12 +18,22 @@
  limitations under the License.
  */
 
-import DataSource
+import SystemInfoKit
 
-extension RingBuffer {
-    static var mock: RingBuffer {
-        var ringBuffer = RingBuffer()
-        ringBuffer.append((0 ..< 61).map { _ in Double.random(in: 2 ... 100) })
-        return ringBuffer
+extension BatteryInfo {
+    func masked(_ masked: Bool) -> BatteryInfo {
+        if masked {
+            BatteryInfo(
+                percentage: .init(rawValue: 0.746),
+                isInstalled: true,
+                isCharging: false,
+                adapterName: String(localized: "battery", bundle: .module),
+                maxCapacity: .init(rawValue: 0.937),
+                cycleCount: 18,
+                temperature: .init(value: 30.3)
+            )
+        } else {
+            self
+        }
     }
 }
