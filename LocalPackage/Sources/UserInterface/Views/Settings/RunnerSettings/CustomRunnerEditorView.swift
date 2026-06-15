@@ -32,6 +32,7 @@ struct CustomRunnerEditorView: View {
                     TextField(text: $store.runnerName) {
                         Text("runnerName", bundle: .module)
                     }
+                    .textFieldStyle(.roundedBorder)
                     Picker(selection: Binding<RenderingMode>(
                         get: { .init(isTemplate: store.isTemplate) },
                         asyncSet: { await store.send(.selectRenderingMode($0)) }
