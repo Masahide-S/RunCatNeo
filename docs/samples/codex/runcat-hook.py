@@ -15,8 +15,9 @@ OUT = Path(os.environ.get("RUNCAT_OUT_FILE", str(Path.home() / ".codex" / "runca
 def percentage_metric(title, used_percentage):
     if not isinstance(used_percentage, (int, float)):
         return None
-    normalized_value = max(0.0, min(float(used_percentage) / 100, 1.0))
-    formatted_percentage = f"{float(used_percentage):.1f}".rstrip("0").rstrip(".")
+    clamped_percentage = max(0.0, min(float(used_percentage), 100.0))
+    normalized_value = clamped_percentage / 100
+    formatted_percentage = f"{clamped_percentage:.1f}".rstrip("0").rstrip(".")
     return {
         "title": title,
         "formattedValue": f"{formatted_percentage}%",
@@ -79,7 +80,13 @@ def rate_limit_metrics(token_count):
 
 
 def write_snapshot(hook_input):
-    model = hook_input.get("model") or "Codex"
+    model = hook_input.get("model")
+    if isinstance(model, str):
+        model = model.strip()
+    else:
+        model = ""
+    if not model:
+        model = "Codex"
     token_count = latest_token_count(hook_input.get("transcript_path"))
     context = context_metric(token_count)
     metrics = [{"title": "Model", "formattedValue": model}]

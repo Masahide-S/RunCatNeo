@@ -60,7 +60,11 @@ The output JSON shape is documented in [`../../CustomMetricsSchema.md`](../../Cu
 
 - File never appears → run the script manually with a recent session transcript:
   ```bash
-  transcript="$(find ~/.codex/sessions -name '*.jsonl' -type f -print | tail -n 1)"
+  transcript="$(find ~/.codex/sessions -name '*.jsonl' -type f -print0 \
+    | xargs -0 stat -f '%m %N' \
+    | sort -nr \
+    | head -n 1 \
+    | cut -d ' ' -f 2-)"
   printf '{"model":"Codex","transcript_path":"%s"}\n' "$transcript" \
     | ~/.codex/runcat-hook.py
   python3 -m json.tool ~/.codex/runcat-usage.json
