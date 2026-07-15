@@ -8,12 +8,6 @@
 > - We do not accept issues or pull requests in languages other than English.
 > - Issues that do not follow the Issue Template will be closed without question.
 
-> [!NOTE]
->
-> - This project is not the RunCat currently available on the App Store, but a next-generation RunCat being newly developed.
-> - It is not intended to be a complete replacement or an upgrade of the existing RunCat, but rather an attempt to implement a new concept.
-> - Since it is currently under development for the first release, we do not accept issues or pull requests (PRs) at this time.
-
 [![Issues](https://img.shields.io/github/issues/runcat-dev/RunCatNeo)](https://github.com/runcat-dev/RunCatNeo/issues)
 [![Forks](https://img.shields.io/github/forks/runcat-dev/RunCatNeo)](https://github.com/runcat-dev/RunCatNeo/network/members)
 [![Stars](https://img.shields.io/github/stars/runcat-dev/RunCatNeo)](https://github.com/runcat-dev/RunCatNeo/stargazers)
@@ -25,9 +19,9 @@
 
 <img src="./docs/images/en/demo.gif" width="449" height="350" alt="demo" />
 
-## 🚧 Installation
+## Installation
 
-~~RunCat Neo is available for installation on the App Store.~~
+RunCat Neo is available for installation on the App Store.
 
 - Requirement: macOS 26 or higher
 - App Store: https://apps.apple.com/us/app/runcat-neo/id6757801838
