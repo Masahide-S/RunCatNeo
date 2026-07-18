@@ -7,15 +7,16 @@ Writes ~/.claude/runcat-usage.json shaped like:
     {
       "title": "Claude Code",
       "symbol": "staroflife",
-      "metricsBarValue": "67%",
+      "metricsBarValue": "69%",
       "metrics": [
-        {"title": "Model",   "formattedValue": "Opus 4.7"},
-        {"title": "Context", "formattedValue": "67%", "normalizedValue": 0.67},
-        {"title": "5h",      "formattedValue": "3%",  "normalizedValue": 0.03},
-        {"title": "7d",      "formattedValue": "3%",  "normalizedValue": 0.03}
+        {"title": "Model", "formattedValue": "Sonnet 4.5"},
+        {"title": "5h", "formattedValue": "69%", "normalizedValue": 0.69},
+        {"title": "7d", "formattedValue": "12%", "normalizedValue": 0.12}
       ],
-      "lastUpdatedDate": "2026-06-07T05:55:36Z"
+      "lastUpdatedDate": "2026-07-18T10:11:15Z"
     }
+
+Reads rate limit data from Claude app's plan-usage-history.json.
 """
 
 import json
@@ -28,10 +29,18 @@ from pathlib import Path
 OUT = Path(os.environ.get("RUNCAT_OUT_FILE", str(Path.home() / ".claude" / "runcat-usage.json")))
 
 
-def pct(title, value):
-    if value is None:
+def format_duration(ms):
+    """Format milliseconds to human-readable duration."""
+    if ms is None:
         return None
-    return {"title": title, "formattedValue": f"{value:g}%", "normalizedValue": round(value / 100, 4)}
+    seconds = ms / 1000
+    if seconds < 60:
+        return f"{int(seconds)}s"
+    minutes = seconds / 60
+    if minutes < 60:
+        return f"{int(minutes)}m"
+    hours = minutes / 60
+    return f"{hours:.1f}h"
 
 
 try:
@@ -41,25 +50,56 @@ try:
 except Exception:
     payload = {}
 
+# Extract data from payload
 model = (payload.get("model") or {}).get("display_name") or "Claude Code"
-ctx = (payload.get("context_window") or {}).get("used_percentage")
-rate_limits = payload.get("rate_limits") or {}
-five = (rate_limits.get("five_hour") or {}).get("used_percentage")
-seven = (rate_limits.get("seven_day") or {}).get("used_percentage")
 
+# Read rate limits from Claude app's plan usage history
+usage_file = Path.home() / "Library" / "Application Support" / "Claude" / "plan-usage-history.json"
+five_hour_pct = None
+seven_day_pct = None
+
+try:
+    with open(usage_file) as f:
+        usage_data = json.load(f)
+        if usage_data.get("samples"):
+            # Get the most recent sample
+            latest = usage_data["samples"][-1]
+            usage = latest.get("u", {})
+            five_hour_pct = usage.get("fh")  # five_hour percentage
+            seven_day_pct = usage.get("sd")  # seven_day percentage
+except Exception:
+    pass  # If file doesn't exist or is unreadable, continue without rate limits
+
+# Build metrics
+metrics = [{"title": "Model", "formattedValue": model}]
+
+# 5h rate limit
+if five_hour_pct is not None:
+    metrics.append({
+        "title": "5h",
+        "formattedValue": f"{five_hour_pct}%",
+        "normalizedValue": round(five_hour_pct / 100, 4)
+    })
+
+# 7d rate limit
+if seven_day_pct is not None:
+    metrics.append({
+        "title": "7d",
+        "formattedValue": f"{seven_day_pct}%",
+        "normalizedValue": round(seven_day_pct / 100, 4)
+    })
+
+# Build snapshot
 snapshot = {
     "title": "Claude Code",
     "symbol": "staroflife",
-    "metrics": [m for m in [
-        {"title": "Model", "formattedValue": model},
-        pct("Context", ctx),
-        pct("5h", five),
-        pct("7d", seven),
-    ] if m is not None],
+    "metrics": metrics,
     "lastUpdatedDate": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
 }
-if ctx is not None:
-    snapshot["metricsBarValue"] = f"{ctx:g}%"
+
+# Set metrics bar value to 5h rate limit
+if five_hour_pct is not None:
+    snapshot["metricsBarValue"] = f"{five_hour_pct}%"
 
 OUT.parent.mkdir(parents=True, exist_ok=True)
 fd, tmp = tempfile.mkstemp(prefix=".runcat-", dir=str(OUT.parent))
