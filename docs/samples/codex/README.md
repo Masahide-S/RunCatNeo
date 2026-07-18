@@ -33,7 +33,7 @@ This sample uses Codex's local session transcript, whose format may change betwe
 3. Restart Codex, then use `/hooks` to review and trust the new hook if prompted.
 4. Complete a turn in Codex. The script creates `~/.codex/runcat-usage.json` after the turn finishes.
 5. In RunCat Neo, open **Settings → Metrics → Custom Metrics**, click **Add JSON Source**, and choose `~/.codex/runcat-usage.json`.
-6. Optional: click the Metrics Bar and flip the source's toggle to show the lowest remaining account quota directly in the menu bar.
+6. Optional: click the Metrics Bar and flip the source's toggle to show the context usage directly in the menu bar.
 
 The hook feature is enabled by default in current Codex releases. If `/hooks` is unavailable, add this to `~/.codex/config.toml` and restart Codex:
 
@@ -46,7 +46,7 @@ hooks = true
 
 - **Model** — the active model slug provided to the hook.
 - **Context** — the latest context token count divided by the model's context-window size.
-- **5h left**, **7d left**, or another duration — the remaining quota for each rate-limit window included in the latest token-count event.
+- **5h**, **7d**, or another duration — each rate-limit window included in the latest token-count event.
 
 If a snapshot already exists, sessions without a recognized token-count event or account rate limits leave the last valid snapshot untouched. This prevents concurrent API-key, local-model, or incomplete sessions from replacing account usage with a Model-only card. The script always exits successfully so a parsing failure does not interrupt Codex.
 
