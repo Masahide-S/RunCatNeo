@@ -96,19 +96,18 @@ def github_graphql(query):
 
 def get_contribution_stats():
     """Fetch contribution statistics from GitHub."""
-    today = datetime.now(timezone.utc)
-    week_start = today - timedelta(days=today.weekday())
-    # Use tomorrow to include all of today's contributions
-    tomorrow = today + timedelta(days=1)
+    today = datetime.now().astimezone()
+    week_start = today.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=today.weekday())
 
-    # Format dates as YYYY-MM-DD with explicit times to avoid partial day issues
-    week_start_str = week_start.strftime("%Y-%m-%d") + "T00:00:00Z"
-    tomorrow_str = tomorrow.strftime("%Y-%m-%d") + "T00:00:00Z"
+    # Pass local-timezone-aware timestamps so GitHub buckets days the same way
+    # your profile's contribution graph does, instead of at UTC midnight.
+    week_start_str = week_start.isoformat(timespec="seconds")
+    now_str = today.isoformat(timespec="seconds")
 
     query = f"""
     {{
       user(login: "{GITHUB_USERNAME}") {{
-        contributionsCollection(from: "{week_start_str}", to: "{tomorrow_str}") {{
+        contributionsCollection(from: "{week_start_str}", to: "{now_str}") {{
           contributionCalendar {{
             totalContributions
             weeks {{
@@ -152,19 +151,18 @@ def get_contribution_stats():
 def calculate_streak():
     """Calculate current and best streak from all-time contributions."""
     # Fetch last year of contributions
-    today = datetime.now(timezone.utc)
-    year_ago = today - timedelta(days=365)
-    # Use tomorrow to include all of today's contributions
-    tomorrow = today + timedelta(days=1)
+    today = datetime.now().astimezone()
+    year_ago = (today - timedelta(days=365)).replace(hour=0, minute=0, second=0, microsecond=0)
 
-    # Format dates as YYYY-MM-DD with explicit times to avoid partial day issues
-    year_ago_str = year_ago.strftime("%Y-%m-%d") + "T00:00:00Z"
-    tomorrow_str = tomorrow.strftime("%Y-%m-%d") + "T00:00:00Z"
+    # Pass local-timezone-aware timestamps so GitHub buckets days the same way
+    # your profile's contribution graph does, instead of at UTC midnight.
+    year_ago_str = year_ago.isoformat(timespec="seconds")
+    now_str = today.isoformat(timespec="seconds")
 
     query = f"""
     {{
       user(login: "{GITHUB_USERNAME}") {{
-        contributionsCollection(from: "{year_ago_str}", to: "{tomorrow_str}") {{
+        contributionsCollection(from: "{year_ago_str}", to: "{now_str}") {{
           contributionCalendar {{
             weeks {{
               contributionDays {{
@@ -213,8 +211,8 @@ def calculate_streak():
 
 def get_merged_prs():
     """Get count of merged PRs this week."""
-    today = datetime.now(timezone.utc)
-    week_start = today - timedelta(days=today.weekday())
+    today = datetime.now().astimezone()
+    week_start = today.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=today.weekday())
 
     query = f"""
     {{
@@ -230,19 +228,18 @@ def get_merged_prs():
 
 def get_recent_days_contributions(days=7):
     """Get contribution counts for the last N days."""
-    today = datetime.now(timezone.utc)
-    start_date = today - timedelta(days=days - 1)
-    # Use tomorrow to include all of today's contributions
-    tomorrow = today + timedelta(days=1)
+    today = datetime.now().astimezone()
+    start_date = (today - timedelta(days=days - 1)).replace(hour=0, minute=0, second=0, microsecond=0)
 
-    # Format dates as YYYY-MM-DD with explicit times to avoid partial day issues
-    start_date_str = start_date.strftime("%Y-%m-%d") + "T00:00:00Z"
-    tomorrow_str = tomorrow.strftime("%Y-%m-%d") + "T00:00:00Z"
+    # Pass local-timezone-aware timestamps so GitHub buckets days the same way
+    # your profile's contribution graph does, instead of at UTC midnight.
+    start_date_str = start_date.isoformat(timespec="seconds")
+    now_str = today.isoformat(timespec="seconds")
 
     query = f"""
     {{
       user(login: "{GITHUB_USERNAME}") {{
-        contributionsCollection(from: "{start_date_str}", to: "{tomorrow_str}") {{
+        contributionsCollection(from: "{start_date_str}", to: "{now_str}") {{
           contributionCalendar {{
             weeks {{
               contributionDays {{
@@ -281,7 +278,7 @@ try:
     ]
 
     # Add today's contribution graph (always shown, even if 0)
-    today = datetime.now(timezone.utc)
+    today = datetime.now().astimezone()
     today_str = today.strftime("%Y-%m-%d")
     today_date_label = today.strftime("%-m/%-d")
 

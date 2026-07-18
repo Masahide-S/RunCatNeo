@@ -65,6 +65,10 @@ This runs the script:
 
 Click the Metrics Bar icon and toggle the GitHub stats source to show your today's commit count directly in the menu bar.
 
+### A note on "Today"
+
+The script queries GitHub with timestamps in the Mac's local timezone, so day boundaries (what counts as "today" vs. "yesterday") match what you see on your own contribution graph on github.com. If the Mac running the script is in a different timezone than your GitHub account's, the two won't line up — there's no API-exposed account timezone setting to match against, only the querying machine's clock.
+
 ## Customization
 
 Edit the script to adjust:
