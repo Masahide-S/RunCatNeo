@@ -98,11 +98,17 @@ def get_contribution_stats():
     """Fetch contribution statistics from GitHub."""
     today = datetime.now(timezone.utc)
     week_start = today - timedelta(days=today.weekday())
+    # Use tomorrow to include all of today's contributions
+    tomorrow = today + timedelta(days=1)
+
+    # Format dates as YYYY-MM-DD with explicit times to avoid partial day issues
+    week_start_str = week_start.strftime("%Y-%m-%d") + "T00:00:00Z"
+    tomorrow_str = tomorrow.strftime("%Y-%m-%d") + "T00:00:00Z"
 
     query = f"""
     {{
       user(login: "{GITHUB_USERNAME}") {{
-        contributionsCollection(from: "{week_start.isoformat()}", to: "{today.isoformat()}") {{
+        contributionsCollection(from: "{week_start_str}", to: "{tomorrow_str}") {{
           contributionCalendar {{
             totalContributions
             weeks {{
@@ -148,11 +154,17 @@ def calculate_streak():
     # Fetch last year of contributions
     today = datetime.now(timezone.utc)
     year_ago = today - timedelta(days=365)
+    # Use tomorrow to include all of today's contributions
+    tomorrow = today + timedelta(days=1)
+
+    # Format dates as YYYY-MM-DD with explicit times to avoid partial day issues
+    year_ago_str = year_ago.strftime("%Y-%m-%d") + "T00:00:00Z"
+    tomorrow_str = tomorrow.strftime("%Y-%m-%d") + "T00:00:00Z"
 
     query = f"""
     {{
       user(login: "{GITHUB_USERNAME}") {{
-        contributionsCollection(from: "{year_ago.isoformat()}", to: "{today.isoformat()}") {{
+        contributionsCollection(from: "{year_ago_str}", to: "{tomorrow_str}") {{
           contributionCalendar {{
             weeks {{
               contributionDays {{
@@ -216,28 +228,102 @@ def get_merged_prs():
     return result["data"]["search"]["issueCount"]
 
 
+def get_recent_days_contributions(days=7):
+    """Get contribution counts for the last N days."""
+    today = datetime.now(timezone.utc)
+    start_date = today - timedelta(days=days - 1)
+    # Use tomorrow to include all of today's contributions
+    tomorrow = today + timedelta(days=1)
+
+    # Format dates as YYYY-MM-DD with explicit times to avoid partial day issues
+    start_date_str = start_date.strftime("%Y-%m-%d") + "T00:00:00Z"
+    tomorrow_str = tomorrow.strftime("%Y-%m-%d") + "T00:00:00Z"
+
+    query = f"""
+    {{
+      user(login: "{GITHUB_USERNAME}") {{
+        contributionsCollection(from: "{start_date_str}", to: "{tomorrow_str}") {{
+          contributionCalendar {{
+            weeks {{
+              contributionDays {{
+                contributionCount
+                date
+              }}
+            }}
+          }}
+        }}
+      }}
+    }}
+    """
+
+    result = github_graphql(query)
+    weeks = result["data"]["user"]["contributionsCollection"]["contributionCalendar"]["weeks"]
+
+    # Flatten all days
+    daily_contributions = []
+    for week in weeks:
+        for day in week["contributionDays"]:
+            daily_contributions.append({
+                "date": day["date"],
+                "count": day["contributionCount"]
+            })
+
+    # Return last N days
+    return daily_contributions[-days:]
+
+
 try:
     stats = get_contribution_stats()
-    current_streak, best_streak = calculate_streak()
-    merged_prs = get_merged_prs()
+    recent_days = get_recent_days_contributions(7)
 
     metrics = [
-        {"title": "Today", "formattedValue": f"{stats['today']} commits"},
-        {
-            "title": "This Week",
-            "formattedValue": f"{stats['week']} commits",
-            "normalizedValue": round(min(stats['week'] / 100, 1.0), 4)  # Normalize to max 100 commits
-        },
+        {"title": "Today", "formattedValue": f"{stats['today']} contributes"},
     ]
 
-    if current_streak > 0:
-        metrics.append({"title": "Streak", "formattedValue": f"{current_streak} days"})
+    # Add today's contribution graph (always shown, even if 0)
+    today = datetime.now(timezone.utc)
+    today_str = today.strftime("%Y-%m-%d")
+    today_date_label = today.strftime("%-m/%-d")
 
-    if best_streak > 0:
-        metrics.append({"title": "Best Streak", "formattedValue": f"{best_streak} days"})
+    max_contributions = max((day["count"] for day in recent_days), default=10)
 
-    if merged_prs > 0:
-        metrics.append({"title": "PRs Merged", "formattedValue": f"{merged_prs} this week"})
+    # Add today's graph
+    today_count = stats['today']
+    today_normalized = min(today_count / max(max_contributions, 10), 1.0) if today_count > 0 else 0
+    metrics.append({
+        "title": f"{today_date_label} (today)",
+        "formattedValue": str(today_count),
+        "normalizedValue": round(today_normalized, 4)
+    })
+
+    # Add recent 2 days with contributions (excluding today)
+    daily_metrics = []
+    for day_data in reversed(recent_days):
+        if day_data["date"] == today_str:
+            continue  # Skip today, already added
+
+        count = day_data["count"]
+        if count > 0:
+            date_obj = datetime.fromisoformat(day_data["date"].replace('Z', '+00:00'))
+            date_label = date_obj.strftime("%-m/%-d") if hasattr(date_obj, 'strftime') else day_data["date"][-5:]
+
+            # Normalize based on max contributions in the period
+            normalized = min(count / max(max_contributions, 10), 1.0)
+            daily_metrics.append({
+                "title": date_label,
+                "formattedValue": str(count),
+                "normalizedValue": round(normalized, 4)
+            })
+
+    # Add only the last 2 days with contributions (excluding today)
+    metrics.extend(daily_metrics[:2])
+
+    # Add weekly total at the bottom
+    metrics.append({
+        "title": "This Week",
+        "formattedValue": str(stats['week']),
+        "normalizedValue": round(min(stats['week'] / 100, 1.0), 4)  # Normalize to max 100 commits
+    })
 
     snapshot = {
         "title": "GitHub",
@@ -253,7 +339,7 @@ try:
         json.dump(snapshot, f, ensure_ascii=False, indent=2)
     os.replace(tmp, OUT)
 
-    print(f"✓ GitHub stats updated: {stats['today']} commits today, {current_streak} day streak")
+    print(f"✓ GitHub stats updated: {stats['today']} commits today, {stats['week']} this week")
 
 except Exception as e:
     print(f"Error: {e}", file=sys.stderr)
