@@ -65,6 +65,10 @@ This runs the script:
 
 Click the Metrics Bar icon and toggle the GitHub stats source to show your today's commit count directly in the menu bar.
 
+### A note on "Today"
+
+The script queries GitHub with timestamps in the Mac's local timezone, so day boundaries (what counts as "today" vs. "yesterday") match what you see on your own contribution graph on github.com. If the Mac running the script is in a different timezone than your GitHub account's, the two won't line up — there's no API-exposed account timezone setting to match against, only the querying machine's clock.
+
 ## Customization
 
 Edit the script to adjust:
@@ -88,6 +92,11 @@ Edit the script to adjust:
 - Check if the script is running: `launchctl list | grep github-stats`
 - View logs: `log show --predicate 'process == "update-github-stats.py"' --last 1h`
 - Run manually to see errors: `~/.runcat/update-github-stats.py`
+
+**Card updates when run by hand, but not automatically**
+- `launchctl print gui/$(id -u)/dev.runcat.github-stats` and check `last exit code`. A non-zero code with `gh command failed` or `GitHub CLI (gh) not found` means launchd couldn't find `gh` — its default `PATH` (`/usr/bin:/bin:/usr/sbin:/sbin`) doesn't include Homebrew's `bin` directory, even though your interactive shell's does.
+- The bundled plist sets `EnvironmentVariables` → `PATH` to include `/opt/homebrew/bin` (Apple Silicon) and `/usr/local/bin` (Intel) for this reason. If you installed `gh` somewhere else, run `which gh` and add that directory too.
+- After editing the plist, reload it: `launchctl bootout gui/$(id -u)/dev.runcat.github-stats; launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/dev.runcat.github-stats.plist`
 
 **Rate limiting**
 - Authenticated requests get 5,000 requests/hour (plenty for this use case)
