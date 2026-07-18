@@ -4,13 +4,13 @@ A minimal Python script that lets RunCat Neo's Custom Metrics card show your Cla
 
 **Displays:**
 - Current model name
-- 5-hour rate limit usage (with progress bar)
-- 7-day rate limit usage (with progress bar)
+- 5-hour rate limit usage (with progress bar and reset time, e.g. `69% (~14:30)`)
+- 7-day rate limit usage (with progress bar and reset time)
 
 ## Requirements
 
-- Claude desktop app (the script reads rate limit data from `~/Library/Application Support/Claude/plan-usage-history.json`)
-- Claude Code CLI
+- Claude desktop app (the script reads rate limit percentages from `~/Library/Application Support/Claude/plan-usage-history.json`)
+- Claude Code CLI recent enough to include `rate_limits` in the statusLine payload — older versions omit reset times, and the script just drops the `(~...)` suffix
 
 ## Setup
 
@@ -45,7 +45,7 @@ The output JSON shape is documented in [`../../CustomMetricsSchema.md`](../../Cu
 
 ## How It Works
 
-The script reads rate limit data from Claude desktop app's usage history file (`~/Library/Application Support/Claude/plan-usage-history.json`). This file is updated automatically by the Claude app and contains the most recent 5-hour and 7-day usage percentages.
+The script reads rate limit percentages from Claude desktop app's usage history file (`~/Library/Application Support/Claude/plan-usage-history.json`). This file is updated automatically by the Claude app and contains the most recent 5-hour and 7-day usage percentages. Reset times aren't in that file — they come from the `rate_limits.five_hour.resets_at` / `rate_limits.seven_day.resets_at` fields of the JSON Claude Code pipes into the statusLine command on stdin.
 
 ## Troubleshooting
 

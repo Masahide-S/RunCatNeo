@@ -10,13 +10,16 @@ Writes ~/.claude/runcat-usage.json shaped like:
       "metricsBarValue": "69%",
       "metrics": [
         {"title": "Model", "formattedValue": "Sonnet 4.5"},
-        {"title": "5h", "formattedValue": "69%", "normalizedValue": 0.69},
-        {"title": "7d", "formattedValue": "12%", "normalizedValue": 0.12}
+        {"title": "5h", "formattedValue": "69% (~14:30)", "normalizedValue": 0.69},
+        {"title": "7d", "formattedValue": "12% (~7/22 03:00)", "normalizedValue": 0.12}
       ],
       "lastUpdatedDate": "2026-07-18T10:11:15Z"
     }
 
-Reads rate limit data from Claude app's plan-usage-history.json.
+Rate limit percentages come from Claude app's plan-usage-history.json. Reset
+times come from the statusLine payload's `rate_limits` field, which requires
+a recent enough Claude Code version — older versions omit it, and the "(~...)"
+suffix is simply left off.
 """
 
 import json
@@ -27,6 +30,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 OUT = Path(os.environ.get("RUNCAT_OUT_FILE", str(Path.home() / ".claude" / "runcat-usage.json")))
+
+
+def format_reset(epoch_seconds):
+    """Format a Unix epoch (seconds) into a short local reset time, e.g. "~14:30" or "~7/22 03:00"."""
+    if epoch_seconds is None:
+        return None
+    now = datetime.now().astimezone()
+    reset = datetime.fromtimestamp(epoch_seconds).astimezone()
+    hm = reset.strftime("%H:%M")
+    if reset.date() == now.date():
+        return f"~{hm}"
+    return f"~{reset.month}/{reset.day} {hm}"
 
 
 def format_duration(ms):
@@ -70,22 +85,32 @@ try:
 except Exception:
     pass  # If file doesn't exist or is unreadable, continue without rate limits
 
+# Reset times only come from the statusLine payload (plan-usage-history.json
+# doesn't carry them). Requires a recent enough Claude Code version.
+rate_limits = payload.get("rate_limits") or {}
+five_hour_resets_at = (rate_limits.get("five_hour") or {}).get("resets_at")
+seven_day_resets_at = (rate_limits.get("seven_day") or {}).get("resets_at")
+
 # Build metrics
 metrics = [{"title": "Model", "formattedValue": model}]
 
 # 5h rate limit
 if five_hour_pct is not None:
+    reset = format_reset(five_hour_resets_at)
+    formatted = f"{five_hour_pct}% ({reset})" if reset else f"{five_hour_pct}%"
     metrics.append({
         "title": "5h",
-        "formattedValue": f"{five_hour_pct}%",
+        "formattedValue": formatted,
         "normalizedValue": round(five_hour_pct / 100, 4)
     })
 
 # 7d rate limit
 if seven_day_pct is not None:
+    reset = format_reset(seven_day_resets_at)
+    formatted = f"{seven_day_pct}% ({reset})" if reset else f"{seven_day_pct}%"
     metrics.append({
         "title": "7d",
-        "formattedValue": f"{seven_day_pct}%",
+        "formattedValue": formatted,
         "normalizedValue": round(seven_day_pct / 100, 4)
     })
 
