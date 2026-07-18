@@ -12,10 +12,10 @@ from pathlib import Path
 OUT = Path(os.environ.get("RUNCAT_OUT_FILE", str(Path.home() / ".codex" / "runcat-usage.json")))
 
 
-def percentage_metric(title, used_percentage):
-    if not isinstance(used_percentage, (int, float)):
+def percentage_metric(title, percentage):
+    if not isinstance(percentage, (int, float)):
         return None
-    clamped_percentage = max(0.0, min(float(used_percentage), 100.0))
+    clamped_percentage = max(0.0, min(float(percentage), 100.0))
     normalized_value = clamped_percentage / 100
     formatted_percentage = f"{clamped_percentage:.1f}".rstrip("0").rstrip(".")
     return {
@@ -72,10 +72,13 @@ def rate_limit_metrics(token_count):
     for key in ("primary", "secondary"):
         limit = rate_limits.get(key) or {}
         title = window_title(limit.get("window_minutes"))
-        metric = percentage_metric(title, limit.get("used_percent")) if title else None
-        if metric is not None and title not in titles:
+        used_percentage = limit.get("used_percent")
+        if not title or not isinstance(used_percentage, (int, float)):
+            continue
+        metric = percentage_metric(f"{title} left", 100 - used_percentage)
+        if metric is not None and metric["title"] not in titles:
             metrics.append(metric)
-            titles.add(title)
+            titles.add(metric["title"])
     return metrics
 
 
@@ -88,18 +91,28 @@ def write_snapshot(hook_input):
     if not model:
         model = "Codex"
     token_count = latest_token_count(hook_input.get("transcript_path"))
+    if token_count is None and OUT.exists():
+        return
     context = context_metric(token_count)
+    rate_metrics = rate_limit_metrics(token_count)
+    if not rate_metrics and OUT.exists():
+        return
     metrics = [{"title": "Model", "formattedValue": model}]
     if context is not None:
         metrics.append(context)
-    metrics.extend(rate_limit_metrics(token_count))
+    metrics.extend(rate_metrics)
     snapshot = {
         "title": "Codex",
         "symbol": "camera.aperture",
         "metrics": metrics,
         "lastUpdatedDate": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
-    if context is not None:
+    if rate_metrics:
+        snapshot["metricsBarValue"] = min(
+            rate_metrics,
+            key=lambda metric: metric["normalizedValue"],
+        )["formattedValue"]
+    elif context is not None:
         snapshot["metricsBarValue"] = context["formattedValue"]
     OUT.parent.mkdir(parents=True, exist_ok=True)
     file_descriptor, temporary_path = tempfile.mkstemp(prefix=".runcat-", dir=str(OUT.parent))
