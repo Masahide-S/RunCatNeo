@@ -1,6 +1,16 @@
 # Claude Code Integration Sample
 
-A minimal Python script that lets RunCat Neo's Custom Metrics card show your Claude Code session at a glance. Each time Claude Code runs its statusLine command, the script writes a Custom Metrics JSON snapshot to `~/.claude/runcat-usage.json` and prints the current model name as the terminal status line.
+A minimal Python script that lets RunCat Neo's Custom Metrics card show your Claude Code rate limits at a glance. Each time Claude Code runs its statusLine command, the script reads rate limit data from Claude app's usage history and writes a Custom Metrics JSON snapshot to `~/.claude/runcat-usage.json`.
+
+**Displays:**
+- Current model name
+- 5-hour rate limit usage (with progress bar and reset time, e.g. `69% (~14:30)`)
+- 7-day rate limit usage (with progress bar and reset time)
+
+## Requirements
+
+- Claude desktop app (the script reads rate limit percentages from `~/Library/Application Support/Claude/plan-usage-history.json`)
+- Claude Code CLI recent enough to include `rate_limits` in the statusLine payload — older versions omit reset times, and the script just drops the `(~...)` suffix
 
 ## Setup
 
@@ -33,11 +43,16 @@ The output JSON shape is documented in [`../../CustomMetricsSchema.md`](../../Cu
 
 `RUNCAT_OUT_FILE` overrides where the snapshot is written (default: `~/.claude/runcat-usage.json`).
 
+## How It Works
+
+The script reads rate limit percentages from Claude desktop app's usage history file (`~/Library/Application Support/Claude/plan-usage-history.json`). This file is updated automatically by the Claude app and contains the most recent 5-hour and 7-day usage percentages. Reset times aren't in that file — they come from the `rate_limits.five_hour.resets_at` / `rate_limits.seven_day.resets_at` fields of the JSON Claude Code pipes into the statusLine command on stdin.
+
 ## Troubleshooting
 
-- Card shows nothing → confirm Claude Code is calling the statusLine. Run the script by hand to see what it writes:
+- **Card shows only model name, no rate limits** → Make sure the Claude desktop app is installed and running. The script needs access to `~/Library/Application Support/Claude/plan-usage-history.json`.
+- **Card shows nothing** → Confirm Claude Code is calling the statusLine. Run the script by hand to see what it writes:
   ```bash
   printf '{}' | ~/.claude/runcat-statusline.py && python3 -m json.tool ~/.claude/runcat-usage.json
   ```
-- Card stays at the same values → check `~/.claude/runcat-usage.json`'s mtime. If it doesn't update on every Claude Code turn, Claude Code isn't invoking the statusLine.
-- Card footer shows **Last updated: Failed** in red → the file became unreadable. Confirm `~/.claude/runcat-usage.json` still exists, then run another Claude Code turn; the card recovers on the next successful read.
+- **Card stays at the same values** → Check `~/.claude/runcat-usage.json`'s mtime. If it doesn't update on every Claude Code turn, Claude Code isn't invoking the statusLine.
+- **Card footer shows "Last updated: Failed" in red** → The file became unreadable. Confirm `~/.claude/runcat-usage.json` still exists, then run another Claude Code turn; the card recovers on the next successful read.
