@@ -89,6 +89,11 @@ Edit the script to adjust:
 - View logs: `log show --predicate 'process == "update-github-stats.py"' --last 1h`
 - Run manually to see errors: `~/.runcat/update-github-stats.py`
 
+**Card updates when run by hand, but not automatically**
+- `launchctl print gui/$(id -u)/dev.runcat.github-stats` and check `last exit code`. A non-zero code with `gh command failed` or `GitHub CLI (gh) not found` means launchd couldn't find `gh` — its default `PATH` (`/usr/bin:/bin:/usr/sbin:/sbin`) doesn't include Homebrew's `bin` directory, even though your interactive shell's does.
+- The bundled plist sets `EnvironmentVariables` → `PATH` to include `/opt/homebrew/bin` (Apple Silicon) and `/usr/local/bin` (Intel) for this reason. If you installed `gh` somewhere else, run `which gh` and add that directory too.
+- After editing the plist, reload it: `launchctl bootout gui/$(id -u)/dev.runcat.github-stats; launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/dev.runcat.github-stats.plist`
+
 **Rate limiting**
 - Authenticated requests get 5,000 requests/hour (plenty for this use case)
 - The script makes 3 GraphQL queries per run
