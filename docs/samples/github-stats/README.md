@@ -1,14 +1,12 @@
 # GitHub Statistics Integration
 
-A Python script that tracks your GitHub contribution activity in RunCat Neo. Shows your daily commits, weekly progress, contribution streak, and merged PRs at a glance.
+A Python script that tracks your GitHub contribution activity in RunCat Neo. Shows your daily commits and weekly progress at a glance.
 
 ## Features
 
 - **Today's commits** - How active you've been today
+- **Recent days** - Up to 2 of the most recent prior days with contributions
 - **This week's commits** - Weekly progress with a visual bar
-- **Current streak** - Consecutive days with contributions
-- **Best streak** - Your personal record
-- **PRs merged this week** - Actual shipped work
 
 ## Setup
 
@@ -72,9 +70,9 @@ The script queries GitHub with timestamps in the Mac's local timezone, so day bo
 ## Customization
 
 Edit the script to adjust:
-- **`metricsBarValue`** - Currently shows today's commits; change to streak or week count
-- **Metric normalization** - Line 197 normalizes weekly commits to max 100; adjust as needed
-- **SF Symbol** - Line 209 uses `chevron.left.forwardslash.chevron.right`; pick any [SF Symbol](https://developer.apple.com/sf-symbols/)
+- **`metricsBarValue`** - Currently shows today's commits; change to week count instead
+- **Metric normalization** - Line 244 normalizes weekly commits to max 100; adjust as needed
+- **SF Symbol** - Line 249 uses `chevron.left.forwardslash.chevron.right`; pick any [SF Symbol](https://developer.apple.com/sf-symbols/)
 
 ## Troubleshooting
 
@@ -100,5 +98,5 @@ Edit the script to adjust:
 
 **Rate limiting**
 - Authenticated requests get 5,000 requests/hour (plenty for this use case)
-- The script makes 3 GraphQL queries per run
-- Running every 10 minutes = 144 runs/day = 432 API calls/day (well under limit)
+- The script makes 2 GraphQL queries per run (plus one REST call for your username)
+- Running every 10 minutes = 144 runs/day = ~432 API calls/day (well under limit)

@@ -9,11 +9,11 @@ Fetches GitHub contribution stats and writes ~/.runcat/github-stats.json shaped 
       "symbol": "chevron.left.forwardslash.chevron.right",
       "metricsBarValue": "5",
       "metrics": [
-        {"title": "Today", "formattedValue": "5 commits"},
-        {"title": "This Week", "formattedValue": "23 commits", "normalizedValue": 0.23},
-        {"title": "Streak", "formattedValue": "42 days"},
-        {"title": "Best Streak", "formattedValue": "128 days"},
-        {"title": "PRs Merged", "formattedValue": "3 this week"}
+        {"title": "Today", "formattedValue": "5 contributes"},
+        {"title": "7/19 (today)", "formattedValue": "5", "normalizedValue": 0.5},
+        {"title": "7/18", "formattedValue": "3", "normalizedValue": 0.3},
+        {"title": "7/17", "formattedValue": "8", "normalizedValue": 0.8},
+        {"title": "This Week", "formattedValue": "23", "normalizedValue": 0.23}
       ],
       "lastUpdatedDate": "2026-07-18T09:30:00Z"
     }
@@ -146,84 +146,6 @@ def get_contribution_stats():
         "today": today_contributions,
         "week": week_contributions,
     }
-
-
-def calculate_streak():
-    """Calculate current and best streak from all-time contributions."""
-    # Fetch last year of contributions
-    today = datetime.now().astimezone()
-    year_ago = (today - timedelta(days=365)).replace(hour=0, minute=0, second=0, microsecond=0)
-
-    # Pass local-timezone-aware timestamps so GitHub buckets days the same way
-    # your profile's contribution graph does, instead of at UTC midnight.
-    year_ago_str = year_ago.isoformat(timespec="seconds")
-    now_str = today.isoformat(timespec="seconds")
-
-    query = f"""
-    {{
-      user(login: "{GITHUB_USERNAME}") {{
-        contributionsCollection(from: "{year_ago_str}", to: "{now_str}") {{
-          contributionCalendar {{
-            weeks {{
-              contributionDays {{
-                contributionCount
-                date
-              }}
-            }}
-          }}
-        }}
-      }}
-    }}
-    """
-
-    result = github_graphql(query)
-    weeks = result["data"]["user"]["contributionsCollection"]["contributionCalendar"]["weeks"]
-
-    # Flatten all days
-    days = []
-    for week in weeks:
-        for day in week["contributionDays"]:
-            days.append(day)
-
-    # Sort by date descending (newest first)
-    days.sort(key=lambda d: d["date"], reverse=True)
-
-    # Calculate current streak
-    current_streak = 0
-    for day in days:
-        if day["contributionCount"] > 0:
-            current_streak += 1
-        else:
-            break
-
-    # Calculate best streak
-    best_streak = 0
-    temp_streak = 0
-    for day in reversed(days):  # Process chronologically for best streak
-        if day["contributionCount"] > 0:
-            temp_streak += 1
-            best_streak = max(best_streak, temp_streak)
-        else:
-            temp_streak = 0
-
-    return current_streak, max(best_streak, current_streak)
-
-
-def get_merged_prs():
-    """Get count of merged PRs this week."""
-    today = datetime.now().astimezone()
-    week_start = today.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=today.weekday())
-
-    query = f"""
-    {{
-      search(query: "author:{GITHUB_USERNAME} is:pr is:merged merged:>={week_start.strftime('%Y-%m-%d')}", type: ISSUE, first: 100) {{
-        issueCount
-      }}
-    }}
-    """
-
-    result = github_graphql(query)
-    return result["data"]["search"]["issueCount"]
 
 
 def get_recent_days_contributions(days=7):
