@@ -9,7 +9,7 @@ Fetches GitHub contribution stats and writes ~/.runcat/github-stats.json shaped 
       "symbol": "chevron.left.forwardslash.chevron.right",
       "metricsBarValue": "5",
       "metrics": [
-        {"title": "Today", "formattedValue": "5 contributes"},
+        {"title": "Today", "formattedValue": "5 contributions"},
         {"title": "7/19 (today)", "formattedValue": "5", "normalizedValue": 0.5},
         {"title": "7/18", "formattedValue": "3", "normalizedValue": 0.3},
         {"title": "7/17", "formattedValue": "8", "normalizedValue": 0.8},
@@ -196,7 +196,7 @@ try:
     recent_days = get_recent_days_contributions(7)
 
     metrics = [
-        {"title": "Today", "formattedValue": f"{stats['today']} contributes"},
+        {"title": "Today", "formattedValue": f"{stats['today']} contributions"},
     ]
 
     # Add today's contribution graph (always shown, even if 0)
